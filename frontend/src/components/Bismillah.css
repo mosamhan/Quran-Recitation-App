@@ -1,0 +1,42 @@
+.bismillah-container {
+  text-align: center;
+  padding: 30px 20px;
+  margin: 20px 0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.bismillah-text {
+  font-family: 'Amiri', 'Noto Naskh Arabic', 'Arabic Typesetting', serif;
+  font-size: 3rem;
+  line-height: 1.8;
+  color: #2c3e50;
+  direction: rtl;
+  margin-bottom: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.bismillah-translation {
+  font-size: 1.1rem;
+  color: #666;
+  font-style: italic;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .bismillah-text {
+    font-size: 2.2rem;
+  }
+  
+  .bismillah-translation {
+    font-size: 1rem;
+  }
+}
+
+
+
+
+

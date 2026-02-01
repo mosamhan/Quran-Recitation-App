@@ -1,0 +1,144 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
+import api from '../services/api';
+import Navigation from '../components/Navigation';
+import './ProgressPage.css';
+
+const ProgressPage = () => {
+  const { user } = useUser();
+  const navigate = useNavigate();
+  const [progress, setProgress] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/');
+      return;
+    }
+
+    loadProgress();
+    loadSessions();
+  }, [user, navigate]);
+
+  const loadProgress = async () => {
+    try {
+      const response = await api.getProgress(user.id);
+      setProgress(response.data);
+    } catch (error) {
+      console.error('Error loading progress:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSessions = async () => {
+    try {
+      const response = await api.getSessions(user.id);
+      setSessions(response.data.sessions);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    }
+  };
+
+  if (!user || loading) {
+    return (
+      <div className="progress-page">
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="progress-page">
+      <Navigation />
+      <div className="container">
+
+        {progress && (
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-emoji">🎯</div>
+              <div className="stat-value">{progress.total_sessions}</div>
+              <div className="stat-label">Practice Sessions</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-emoji">⭐</div>
+              <div className="stat-value">{progress.average_accuracy}%</div>
+              <div className="stat-label">Average Accuracy</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-emoji">📖</div>
+              <div className="stat-value">{progress.verses_memorized}</div>
+              <div className="stat-label">Verses Memorized</div>
+            </div>
+          </div>
+        )}
+
+        <div className="recent-sessions">
+          <h3 className="section-title">Recent Practice Sessions</h3>
+          {sessions.length > 0 ? (
+            <div className="sessions-list">
+              {sessions.map((session) => (
+                <div key={session.id} className="session-card">
+                  <div className="session-header">
+                    <span className="session-verse">Verse {session.verse_id}</span>
+                    <span className="session-date">
+                      {new Date(session.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="session-accuracy">
+                    Accuracy: <strong>{session.accuracy}%</strong>
+                  </div>
+                  {session.mistakes_count > 0 && (
+                    <div className="session-mistakes">
+                      {session.mistakes_count} mistake(s) found
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-sessions">
+              <p>No practice sessions yet. Start practicing to see your progress!</p>
+              <button
+                onClick={() => navigate('/practice')}
+                className="btn-primary"
+              >
+                Start Practicing
+              </button>
+            </div>
+          )}
+        </div>
+
+        {progress && progress.recent_mistakes && progress.recent_mistakes.length > 0 && (
+          <div className="recent-mistakes">
+            <h3 className="section-title">Common Mistakes to Work On</h3>
+            <div className="mistakes-list">
+              {progress.recent_mistakes.map((mistake, index) => (
+                <div key={index} className="mistake-card">
+                  <div className="mistake-type-badge">{mistake.type}</div>
+                  <div className="mistake-content">
+                    <div className="mistake-text">
+                      <span className="incorrect">❌ {mistake.incorrect || 'Missing'}</span>
+                      <span className="arrow">→</span>
+                      <span className="correct">✅ {mistake.correct}</span>
+                    </div>
+                    {mistake.suggestion && (
+                      <div className="mistake-suggestion">💡 {mistake.suggestion}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProgressPage;
+
