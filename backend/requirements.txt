@@ -9,6 +9,8 @@ numpy==1.26.2
 Werkzeug==3.0.1
 pydub==0.25.1
 nvidia-riva-client>=2.0.0
+PyJWT==2.8.0
+bcrypt==4.1.2
 
 
 

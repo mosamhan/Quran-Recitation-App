@@ -9,8 +9,40 @@ const api = axios.create({
   },
 });
 
+// Attach JWT token to every request if available
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle 401 responses globally (expired/invalid token)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      // Only redirect if not already on auth pages
+      if (!window.location.pathname.startsWith('/login') &&
+          !window.location.pathname.startsWith('/register')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default {
-  // User endpoints
+  // Auth endpoints
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
+  getMe: () => api.get('/auth/me'),
+  updateProfile: (data) => api.put('/auth/profile', data),
+
+  // Legacy user endpoints
   createUser: (username) => api.post('/users', { username }),
   getUser: (userId) => api.get(`/users/${userId}`),
   getDemographic: (userId) => api.get(`/users/${userId}/demographic`),
@@ -33,7 +65,7 @@ export default {
 
   // Quran API endpoints
   getQuranChapters: () => api.get('/quran/chapters'),
-  getQuranChapter: (chapterNumber, translation = 'en.sahih') => 
+  getQuranChapter: (chapterNumber, translation = 'en.sahih') =>
     api.get(`/quran/chapters/${chapterNumber}`, { params: { translation } }),
   getQuranVerse: (chapterNumber, verseNumber, translation = 'en.sahih') =>
     api.get(`/quran/verses/${chapterNumber}/${verseNumber}`, { params: { translation } }),
@@ -45,4 +77,3 @@ export default {
   },
   getReciters: () => api.get('/quran/reciters'),
 };
-

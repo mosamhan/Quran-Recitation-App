@@ -107,6 +107,26 @@ def migrate_database():
             
             migrations_applied.append("Recreated table with uuid column")
         
+        # --- Users table: add auth & profile columns ---
+        cursor.execute("PRAGMA table_info(users)")
+        user_columns = [col[1] for col in cursor.fetchall()]
+
+        user_missing = {
+            'email': "TEXT DEFAULT ''",
+            'password_hash': "TEXT DEFAULT ''",
+            'display_name': 'TEXT',
+            'age_group': 'TEXT',
+            'experience_level': 'TEXT',
+            'onboarding_completed': 'BOOLEAN DEFAULT 0',
+            'updated_at': 'DATETIME',
+        }
+
+        for col_name, col_type in user_missing.items():
+            if col_name not in user_columns:
+                print(f"Adding '{col_name}' column to users table...")
+                cursor.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
+                migrations_applied.append(f"Added users.{col_name} column")
+
         # Add other missing columns (these can be added with ALTER TABLE)
         missing_columns = {
             'audio_file_path': 'TEXT',

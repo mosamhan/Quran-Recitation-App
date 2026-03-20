@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useCallback } from 'react';
 import api from '../services/api';
 
 const UserContext = createContext();
@@ -13,44 +13,88 @@ export const useUser = () => {
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const createUser = async (username) => {
-    setLoading(true);
+  const register = async ({ username, email, password, display_name }) => {
+    const response = await api.register({ username, email, password, display_name });
+    const { token, user: userData } = response.data;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    return userData;
+  };
+
+  const login = async ({ identifier, password }) => {
+    const response = await api.login({ identifier, password });
+    const { token, user: userData } = response.data;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    return userData;
+  };
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // Clean up legacy keys
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    setUser(null);
+  }, []);
+
+  const updateProfile = async (data) => {
+    const response = await api.updateProfile(data);
+    const updatedUser = response.data.user;
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Check legacy localStorage
+      const userId = localStorage.getItem('userId');
+      const username = localStorage.getItem('username');
+      if (userId && username) {
+        setUser({ id: parseInt(userId), username });
+      }
+      setLoading(false);
+      return;
+    }
     try {
-      const response = await api.createUser(username);
-      setUser(response.data);
-      localStorage.setItem('userId', response.data.id);
-      localStorage.setItem('username', response.data.username);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating user:', error);
-      throw error;
+      const response = await api.getMe();
+      const userData = response.data.user;
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+    } catch {
+      // Token expired or invalid
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadUser = () => {
-    const userId = localStorage.getItem('userId');
-    const username = localStorage.getItem('username');
-    if (userId && username) {
-      setUser({ id: parseInt(userId), username });
-    }
-  };
-
-  React.useEffect(() => {
-    loadUser();
   }, []);
 
+  React.useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
+  const isAuthenticated = !!user && !!localStorage.getItem('token');
+
   return (
-    <UserContext.Provider value={{ user, createUser, loading, loadUser }}>
+    <UserContext.Provider value={{
+      user,
+      loading,
+      isAuthenticated,
+      register,
+      login,
+      logout,
+      updateProfile,
+      refreshUser,
+    }}>
       {children}
     </UserContext.Provider>
   );
 };
-
-
-
-
-

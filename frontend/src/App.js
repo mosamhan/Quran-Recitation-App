@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import OnboardingPage from './pages/OnboardingPage';
 import HomePage from './pages/HomePage';
 import PracticePage from './pages/PracticePage';
 import ProgressPage from './pages/ProgressPage';
 import QuranPage from './pages/QuranPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import { UserProvider } from './context/UserContext';
 
 function App() {
@@ -13,11 +17,41 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/quran" element={<QuranPage />} />
-            <Route path="/practice" element={<PracticePage />} />
-            <Route path="/progress" element={<ProgressPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Public routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+
+            {/* Onboarding (requires login but not completed onboarding) */}
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <OnboardingPage />
+              </ProtectedRoute>
+            } />
+
+            {/* Protected routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/quran" element={
+              <ProtectedRoute>
+                <QuranPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/practice" element={
+              <ProtectedRoute>
+                <PracticePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/progress" element={
+              <ProtectedRoute>
+                <ProgressPage />
+              </ProtectedRoute>
+            } />
+
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
       </Router>
@@ -26,4 +60,3 @@ function App() {
 }
 
 export default App;
-
