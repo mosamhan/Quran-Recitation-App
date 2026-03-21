@@ -6,10 +6,13 @@ import Navigation from '../components/Navigation';
 import FloatingAudioPlayer from '../components/FloatingAudioPlayer';
 import Bismillah from '../components/Bismillah';
 import ChapterVerseSelector from '../components/ChapterVerseSelector';
+import { useTheme } from '../context/ThemeContext';
+import { getEncouragement, getSurahDifficulty, getDifficultyLabel, getDifficultyClass } from '../utils/adaptiveContent';
 import './PracticePage.css';
 
 const PracticePage = () => {
   const { user } = useUser();
+  const { ageGroup } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [isRecording, setIsRecording] = useState(false);
@@ -660,6 +663,9 @@ const PracticePage = () => {
                   <span className="verse-label">
                     {selectedChapter.name_arabic} - Verse {currentVerse.number_in_surah}
                   </span>
+                  <span className={`difficulty-badge ${getDifficultyClass(getSurahDifficulty(selectedChapter.number))}`}>
+                    {getDifficultyLabel(getSurahDifficulty(selectedChapter.number), ageGroup)}
+                  </span>
                 </div>
                 <div className="arabic-text">{currentVerse.text}</div>
                 {currentVerse.translation && (
@@ -719,7 +725,7 @@ const PracticePage = () => {
                   </div>
 
                   <div className="feedback-message">
-                    {result.feedback}
+                    {getEncouragement(result.accuracy, ageGroup, user?.experience_level)}
                   </div>
 
                   {result.mistakes && result.mistakes.length > 0 && (

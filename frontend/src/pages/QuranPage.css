@@ -21,9 +21,9 @@
 
 .chapters-sidebar {
   background: white;
-  border-radius: 20px;
+  border-radius: var(--card-radius, 20px);
   padding: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--card-shadow, 0 10px 30px rgba(0, 0, 0, 0.2));
   max-height: calc(100vh - 200px);
   overflow-y: auto;
   position: sticky;
@@ -72,9 +72,9 @@
 }
 
 .chapter-item.active {
-  background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+  background: var(--primary-gradient);
   color: white;
-  box-shadow: 0 4px 15px rgba(44, 62, 80, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .chapter-number {
@@ -101,18 +101,33 @@
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .chapter-meta {
   font-size: 0.85rem;
   opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chapter-name-english {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .quran-content {
   background: white;
-  border-radius: 20px;
+  border-radius: var(--card-radius, 20px);
   padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--card-shadow, 0 10px 30px rgba(0, 0, 0, 0.2));
   min-height: 500px;
 }
 
@@ -128,7 +143,7 @@
 }
 
 .chapter-nav-btn {
-  background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+  background: var(--primary-gradient);
   color: white;
   border: none;
   padding: 12px 20px;
@@ -257,7 +272,7 @@
 
 .verse-text-arabic {
   font-family: 'Amiri', 'Noto Naskh Arabic', 'Arabic Typesetting', 'Arial Unicode MS', 'Tahoma', serif;
-  font-size: 1.8rem;
+  font-size: var(--font-size-arabic, 1.8rem);
   line-height: 2.5;
   color: #2c3e50;
   margin-bottom: 15px;

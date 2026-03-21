@@ -10,10 +10,12 @@ import ProgressPage from './pages/ProgressPage';
 import QuranPage from './pages/QuranPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserProvider } from './context/UserContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
   return (
     <UserProvider>
+      <ThemeProvider>
       <Router>
         <div className="App">
           <Routes>
@@ -55,6 +57,7 @@ function App() {
           </Routes>
         </div>
       </Router>
+      </ThemeProvider>
     </UserProvider>
   );
 }

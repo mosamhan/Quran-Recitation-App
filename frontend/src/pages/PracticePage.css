@@ -4,10 +4,10 @@
 }
 
 .practice-card {
-  background: white;
-  border-radius: 25px;
+  background: var(--card-bg, white);
+  border-radius: var(--card-radius, 25px);
   padding: 40px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--card-shadow, 0 15px 40px rgba(0, 0, 0, 0.2));
   margin-top: 20px;
 }
 
@@ -54,7 +54,7 @@
 }
 
 .nav-arrow-btn {
-  background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+  background: var(--primary-gradient);
   color: white;
   border: none;
   padding: 12px 20px;
@@ -143,6 +143,11 @@
 
 .verse-header {
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .verse-label {
@@ -193,7 +198,7 @@
 
 .arabic-text {
   font-family: 'Amiri', 'Noto Naskh Arabic', 'Arabic Typesetting', 'Traditional Arabic', serif;
-  font-size: 2.5rem;
+  font-size: var(--font-size-arabic, 2.5rem);
   line-height: 2;
   color: #2c3e50;
   margin-bottom: 20px;
@@ -351,7 +356,7 @@
 
 .accuracy-fill {
   height: 100%;
-  background: linear-gradient(90deg, #2c3e50 0%, #1a252f 100%);
+  background: var(--primary-gradient);
   transition: width 0.5s ease;
   border-radius: 15px;
 }
