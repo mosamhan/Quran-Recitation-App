@@ -35,7 +35,7 @@ api.interceptors.response.use(
   }
 );
 
-export default {
+const apiService = {
   // Auth endpoints
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
@@ -90,3 +90,5 @@ export default {
   getCurriculumLesson: (lessonId, userId) =>
     api.get(`/curriculum/lesson/${lessonId}`, { params: { user_id: userId } }),
 };
+
+export default apiService;

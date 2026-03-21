@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
@@ -16,16 +16,10 @@ const CurriculumPage = () => {
   const [activeLevel, setActiveLevel] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) { navigate('/'); return; }
-    loadCurriculum();
-  }, [user, navigate]);
-
-  const loadCurriculum = async () => {
+  const loadCurriculum = useCallback(async () => {
     try {
       const res = await api.getCurriculum(user.id);
       setCurriculum(res.data);
-      // Default to user's experience level, or beginner
       const defaultLevel = user.experience_level || 'beginner';
       setActiveLevel(LEVEL_ORDER.includes(defaultLevel) ? defaultLevel : 'beginner');
     } catch (err) {
@@ -33,7 +27,12 @@ const CurriculumPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) { navigate('/'); return; }
+    loadCurriculum();
+  }, [user, navigate, loadCurriculum]);
 
   const handleStartLesson = (lesson) => {
     if (lesson.status === 'locked') return;

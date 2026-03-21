@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
@@ -19,18 +19,7 @@ const ProgressPage = () => {
   const [allBadges, setAllBadges] = useState({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/');
-      return;
-    }
-
-    loadProgress();
-    loadSessions();
-    loadGamification();
-  }, [user, navigate]);
-
-  const loadProgress = async () => {
+  const loadProgress = useCallback(async () => {
     try {
       const response = await api.getProgress(user.id);
       setProgress(response.data);
@@ -39,18 +28,18 @@ const ProgressPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     try {
       const response = await api.getSessions(user.id);
       setSessions(response.data.sessions);
     } catch (error) {
       console.error('Error loading sessions:', error);
     }
-  };
+  }, [user]);
 
-  const loadGamification = async () => {
+  const loadGamification = useCallback(async () => {
     try {
       const [statsRes, badgesRes] = await Promise.all([
         api.getGamificationStats(user.id),
@@ -61,7 +50,18 @@ const ProgressPage = () => {
     } catch (error) {
       console.error('Error loading gamification:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/');
+      return;
+    }
+
+    loadProgress();
+    loadSessions();
+    loadGamification();
+  }, [user, navigate, loadProgress, loadSessions, loadGamification]);
 
   if (!user || loading) {
     return (

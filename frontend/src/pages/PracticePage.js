@@ -25,7 +25,6 @@ const PracticePage = () => {
   const [audioBlob, setAudioBlob] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
-  const [streamingSessionKey, setStreamingSessionKey] = useState(null);
   const [realTimeMistakes, setRealTimeMistakes] = useState([]);
   const [recordingProgress, setRecordingProgress] = useState(0);
   const [expectedWords, setExpectedWords] = useState([]);
@@ -34,7 +33,6 @@ const PracticePage = () => {
   const errorAudioRef = useRef(null);
   
   // Chapter and verse selection
-  const [chapters, setChapters] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [selectedVerseIndex, setSelectedVerseIndex] = useState(0);
   const [verses, setVerses] = useState([]);
@@ -60,11 +58,12 @@ const PracticePage = () => {
     }
     loadChapters();
     loadReciters();
-    
+
     // Check if coming from QuranPage with pre-selected chapter/verse
     if (location.state?.chapter) {
       handleChapterSelect(location.state.chapter, location.state.verse);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate]);
 
   const loadChapters = async () => {
@@ -72,14 +71,12 @@ const PracticePage = () => {
       const response = await api.getQuranChapters();
       console.log('Chapters response:', response.data);
       const chaptersData = response.data?.chapters || response.data || [];
-      setChapters(chaptersData);
       if (chaptersData.length > 0 && !location.state?.chapter) {
         // Default to first chapter
         handleChapterSelect(1);
       }
     } catch (error) {
       console.error('Error loading chapters:', error);
-      setChapters([]);
     } finally {
       setLoading(false);
     }
@@ -192,7 +189,6 @@ const PracticePage = () => {
 
   const handleReciterChange = async (reciterId) => {
     console.log('Reciter changed to:', reciterId, 'from:', selectedReciter);
-    const oldReciter = selectedReciter;
     setSelectedReciter(reciterId);
     
     // Force clear audio URL
@@ -284,8 +280,7 @@ const PracticePage = () => {
         }
         
         const sessionKey = sessionResponse.data.session_key;
-        setStreamingSessionKey(sessionKey);
-        streamingSessionKeyRef.current = sessionKey; // Store in ref for event handlers
+                streamingSessionKeyRef.current = sessionKey; // Store in ref for event handlers
         setRealTimeMistakes([]);
         setRecordingProgress(0);
         setExpectedWords(sessionResponse.data.expected_words || []);
@@ -441,7 +436,6 @@ const PracticePage = () => {
                 console.log('Final analysis response:', finalResponse.data);
                 
                 setResult(finalResponse.data);
-                setStreamingSessionKey(null);
                 streamingSessionKeyRef.current = null; // Clear ref too
               } catch (error) {
                 console.error('Error finishing analysis:', error);
@@ -496,94 +490,11 @@ const PracticePage = () => {
     }
   };
 
-  const analyzeRecitation = async () => {
-    console.log('Analyze button clicked');
-    console.log('audioBlob:', audioBlob);
-    console.log('user:', user);
-    console.log('verses[selectedVerseIndex]:', verses[selectedVerseIndex]);
-    console.log('selectedChapter:', selectedChapter);
-    
-    if (!audioBlob) {
-      console.error('No audio blob available');
-      alert('Please record your recitation first!');
-      return;
-    }
-    
-    if (!user) {
-      console.error('No user available');
-      alert('Please log in first!');
-      return;
-    }
-    
-    if (!verses[selectedVerseIndex]) {
-      console.error('No verse selected');
-      alert('Please select a verse first!');
-      return;
-    }
-
-    setAnalyzing(true);
-    setResult(null);
-
-    const reader = new FileReader();
-    
-    reader.onloadend = async () => {
-      try {
-        const base64Audio = reader.result;
-        if (!base64Audio) {
-          throw new Error('Failed to read audio file');
-        }
-        
-        const currentVerse = verses[selectedVerseIndex];
-        if (!currentVerse) {
-          throw new Error('No verse selected');
-        }
-        
-        const verseId = `${selectedChapter.number}:${currentVerse.number_in_surah}`;
-
-        console.log('Sending analysis request...');
-        console.log('Verse ID:', verseId);
-        console.log('Expected text length:', currentVerse.text?.length);
-        console.log('Audio data length:', base64Audio.length);
-
-        const response = await api.analyzeRecitation({
-          user_id: user.id,
-          audio_data: base64Audio,
-          expected_text: currentVerse.text,
-          verse_id: verseId
-        });
-
-        console.log('Analysis response:', response.data);
-        setResult(response.data);
-        setAnalyzing(false);
-      } catch (error) {
-        console.error('Error in reader.onloadend:', error);
-        console.error('Error details:', error.response?.data || error.message);
-        console.error('Full error:', error);
-        alert(`Error analyzing your recitation: ${error.response?.data?.error || error.message || 'Unknown error'}. Please try again!`);
-        setAnalyzing(false);
-      }
-    };
-    
-    reader.onerror = (error) => {
-      console.error('FileReader error:', error);
-      alert('Error reading audio file. Please try again!');
-      setAnalyzing(false);
-    };
-    
-    try {
-      reader.readAsDataURL(audioBlob);
-    } catch (error) {
-      console.error('Error starting FileReader:', error);
-      alert('Error processing audio file. Please try again!');
-      setAnalyzing(false);
-    }
-  };
-
   const resetPractice = () => {
     setAudioBlob(null);
     setResult(null);
     setIsRecording(false);
-    setStreamingSessionKey(null);
+    streamingSessionKeyRef.current = null;
     setRealTimeMistakes([]);
     setRecordingProgress(0);
     setExpectedWords([]);

@@ -9,7 +9,6 @@ import './TajweedText.css';
  */
 const TajweedText = ({ text, showRules = true }) => {
   const [rules, setRules] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!text || !showRules) {
@@ -19,7 +18,6 @@ const TajweedText = ({ text, showRules = true }) => {
 
     let cancelled = false;
     const fetchRules = async () => {
-      setLoading(true);
       try {
         const response = await api.analyzeTajweed(text);
         if (!cancelled) {
@@ -28,8 +26,6 @@ const TajweedText = ({ text, showRules = true }) => {
       } catch {
         // Silently fail - just show unhighlighted text
         if (!cancelled) setRules([]);
-      } finally {
-        if (!cancelled) setLoading(false);
       }
     };
 
