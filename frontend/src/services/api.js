@@ -80,4 +80,8 @@ export default {
   // Tajweed endpoints
   getTajweedRules: () => api.get('/tajweed/rules'),
   analyzeTajweed: (text) => api.post('/tajweed/analyze', { text }),
+
+  // Gamification endpoints
+  getGamificationStats: (userId) => api.get(`/gamification/stats/${userId}`),
+  getAllBadges: () => api.get('/gamification/badges'),
 };

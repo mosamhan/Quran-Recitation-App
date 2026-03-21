@@ -1,0 +1,58 @@
+.streak-container {
+  background: var(--card-bg, white);
+  border-radius: var(--card-radius, 16px);
+  padding: 20px;
+  box-shadow: var(--card-shadow, 0 4px 15px rgba(0,0,0,0.08));
+  text-align: center;
+}
+
+.streak-current {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.flame-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.flame-icon.active {
+  animation: flicker 1.5s ease-in-out infinite;
+}
+
+.flame-icon.inactive {
+  opacity: 0.4;
+}
+
+@keyframes flicker {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+.streak-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.streak-number {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text-primary, #2c3e50);
+  line-height: 1;
+}
+
+.streak-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+  font-weight: 600;
+}
+
+.streak-best {
+  font-size: 0.85rem;
+  color: var(--text-muted, #999);
+  font-weight: 600;
+}

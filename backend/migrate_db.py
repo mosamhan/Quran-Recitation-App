@@ -153,8 +153,40 @@ def migrate_database():
                 """)
                 migrations_applied.append(f"Added {col_name} column")
         
+        # --- Gamification tables ---
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_streaks'")
+        if not cursor.fetchone():
+            print("Creating user_streaks table...")
+            cursor.execute("""
+                CREATE TABLE user_streaks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER UNIQUE NOT NULL,
+                    current_streak INTEGER DEFAULT 0,
+                    longest_streak INTEGER DEFAULT 0,
+                    last_practice_date DATE,
+                    total_xp INTEGER DEFAULT 0,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            """)
+            migrations_applied.append("Created user_streaks table")
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_badges'")
+        if not cursor.fetchone():
+            print("Creating user_badges table...")
+            cursor.execute("""
+                CREATE TABLE user_badges (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    badge_id TEXT NOT NULL,
+                    earned_at DATETIME,
+                    FOREIGN KEY (user_id) REFERENCES users(id),
+                    UNIQUE(user_id, badge_id)
+                )
+            """)
+            migrations_applied.append("Created user_badges table")
+
         conn.commit()
-        
+
         if migrations_applied:
             print(f"\n✅ Migration completed! Applied {len(migrations_applied)} changes:")
             for migration in migrations_applied:
