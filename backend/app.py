@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
@@ -7,12 +7,12 @@ from datetime import datetime
 
 from models import db, User, RecitationSession, Mistake, Progress
 from demographic_model import DemographicInformation
+from auth import generate_token, login_required
 from riva_client import RivaClient
 from verses import get_all_verses, get_verse
 from quran_api import QuranAPIService
 from streaming_analyzer import StreamingAnalyzer
 from audio_validator import AudioValidator
-import os
 
 # Optional imports for annotation system (only import if needed)
 try:
@@ -49,29 +49,129 @@ def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'message': 'Quran Recitation API is running'})
 
-@app.route('/api/users', methods=['POST'])
-def create_user():
-    """Create a new user"""
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    """Register a new user account"""
     data = request.json
-    username = data.get('username')
-    
-    if not username:
-        return jsonify({'error': 'Username is required'}), 400
-    
-    # Check if user exists
-    existing_user = User.query.filter_by(username=username).first()
-    if existing_user:
-        return jsonify(existing_user.to_dict()), 200  # Return existing user instead of error
-    
-    user = User(username=username)
+    username = data.get('username', '').strip()
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    display_name = data.get('display_name', '').strip()
+
+    if not all([username, email, password]):
+        return jsonify({'error': 'Username, email, and password are required'}), 400
+
+    if len(password) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters'}), 400
+
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already taken'}), 409
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'Email already registered'}), 409
+
+    user = User(
+        username=username,
+        email=email,
+        display_name=display_name or username
+    )
+    user.set_password(password)
     db.session.add(user)
     db.session.commit()
-    
+
+    token = generate_token(user.id)
     return jsonify({
-        'id': user.id,
-        'username': user.username,
-        'created_at': user.created_at.isoformat()
+        'token': token,
+        'user': user.to_dict()
     }), 201
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Log in with username/email and password"""
+    data = request.json
+    identifier = data.get('identifier', '').strip()  # username or email
+    password = data.get('password', '')
+
+    if not all([identifier, password]):
+        return jsonify({'error': 'Username/email and password are required'}), 400
+
+    # Try username first, then email
+    user = User.query.filter_by(username=identifier).first()
+    if not user:
+        user = User.query.filter_by(email=identifier.lower()).first()
+
+    if not user or not user.check_password(password):
+        return jsonify({'error': 'Invalid credentials'}), 401
+
+    token = generate_token(user.id)
+    return jsonify({
+        'token': token,
+        'user': user.to_dict()
+    }), 200
+
+
+@app.route('/api/auth/me', methods=['GET'])
+@login_required
+def get_current_user():
+    """Get the currently authenticated user's profile"""
+    user = g.current_user
+    return jsonify({
+        'user': user.to_dict(),
+        'total_sessions': len(user.recitation_sessions),
+        'total_verses_memorized': len([p for p in user.progress if p.is_memorized])
+    })
+
+
+@app.route('/api/auth/profile', methods=['PUT'])
+@login_required
+def update_profile():
+    """Update the current user's profile (onboarding + settings)"""
+    user = g.current_user
+    data = request.json
+
+    if 'display_name' in data:
+        user.display_name = data['display_name'].strip()
+    if 'age_group' in data:
+        if data['age_group'] not in ('child', 'teen', 'adult'):
+            return jsonify({'error': 'age_group must be child, teen, or adult'}), 400
+        user.age_group = data['age_group']
+    if 'experience_level' in data:
+        if data['experience_level'] not in ('beginner', 'intermediate', 'advanced'):
+            return jsonify({'error': 'experience_level must be beginner, intermediate, or advanced'}), 400
+        user.experience_level = data['experience_level']
+    if 'onboarding_completed' in data:
+        user.onboarding_completed = bool(data['onboarding_completed'])
+
+    db.session.commit()
+    return jsonify({'user': user.to_dict()})
+
+
+# Legacy endpoint - kept for backwards compatibility during migration
+@app.route('/api/users', methods=['POST'])
+def create_user():
+    """Create a new user (legacy - use /api/auth/register instead)"""
+    data = request.json
+    username = data.get('username')
+
+    if not username:
+        return jsonify({'error': 'Username is required'}), 400
+
+    existing_user = User.query.filter_by(username=username).first()
+    if existing_user:
+        return jsonify(existing_user.to_dict()), 200
+
+    user = User(
+        username=username,
+        email=f"{username.lower().replace(' ', '_')}@legacy.local",
+        display_name=username
+    )
+    user.set_password('legacy-temp-password')
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify(user.to_dict()), 201
+
 
 @app.route('/api/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
@@ -82,7 +182,7 @@ def get_user(user_id):
         'username': user.username,
         'created_at': user.created_at.isoformat(),
         'total_sessions': len(user.recitation_sessions),
-        'total_verses_memorized': user.progress.count()
+        'total_verses_memorized': len([p for p in user.progress if p.is_memorized])
     })
 
 @app.route('/api/users/<int:user_id>/demographic', methods=['GET', 'POST', 'PUT'])
