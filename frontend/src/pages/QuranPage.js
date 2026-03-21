@@ -5,10 +5,13 @@ import api from '../services/api';
 import Navigation from '../components/Navigation';
 import FloatingAudioPlayer from '../components/FloatingAudioPlayer';
 import Bismillah from '../components/Bismillah';
+import { useTheme } from '../context/ThemeContext';
+import { getSurahDifficulty, getDifficultyLabel, getDifficultyClass, isRecommended } from '../utils/adaptiveContent';
 import './QuranPage.css';
 
 const QuranPage = () => {
   const { user } = useUser();
+  const { ageGroup } = useTheme();
   const navigate = useNavigate();
   const [chapters, setChapters] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState(null);
@@ -231,22 +234,34 @@ const QuranPage = () => {
             </div>
             
             <div className="chapters-list">
-              {filteredChapters.map((chapter) => (
-                <div
-                  key={chapter.number}
-                  className={`chapter-item ${selectedChapter?.number === chapter.number ? 'active' : ''}`}
-                  onClick={() => handleChapterSelect(chapter.number)}
-                >
-                  <div className="chapter-number">{chapter.number}</div>
-                  <div className="chapter-info">
-                    <div className="chapter-name-arabic">{chapter.name_arabic}</div>
-                    <div className="chapter-name-english">{chapter.name_simple}</div>
-                    <div className="chapter-meta">
-                      {chapter.number_of_verses} verses • {chapter.revelation_type}
+              {filteredChapters.map((chapter) => {
+                const difficulty = getSurahDifficulty(chapter.number);
+                const recommended = isRecommended(chapter.number, user?.experience_level);
+                return (
+                  <div
+                    key={chapter.number}
+                    className={`chapter-item ${selectedChapter?.number === chapter.number ? 'active' : ''}`}
+                    onClick={() => handleChapterSelect(chapter.number)}
+                  >
+                    <div className="chapter-number">{chapter.number}</div>
+                    <div className="chapter-info">
+                      <div className="chapter-name-arabic">{chapter.name_arabic}</div>
+                      <div className="chapter-name-english">
+                        {chapter.name_simple}
+                        {user?.experience_level === 'beginner' && recommended && (
+                          <span className="recommended-badge">Recommended</span>
+                        )}
+                      </div>
+                      <div className="chapter-meta">
+                        {chapter.number_of_verses} verses • {chapter.revelation_type}
+                        <span className={`difficulty-badge ${getDifficultyClass(difficulty)}`}>
+                          {getDifficultyLabel(difficulty, ageGroup)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
