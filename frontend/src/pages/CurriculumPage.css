@@ -6,10 +6,9 @@
 .curriculum-title {
   font-size: 2rem;
   font-weight: 800;
-  color: white;
+  color: var(--text-primary, #2c3e50);
   text-align: center;
   margin: 30px 0 20px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* ── Level Tabs ───────────────────────────────── */
@@ -28,18 +27,20 @@
   align-items: center;
   gap: 4px;
   padding: 12px 24px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--card-radius, 14px);
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
+  background: var(--card-bg, white);
+  color: var(--text-secondary, #666);
   font-family: 'Nunito', sans-serif;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .level-tab:hover {
-  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--primary-color, #667eea);
+  color: var(--text-primary, #2c3e50);
 }
 
 .level-tab.active {
@@ -60,7 +61,7 @@
 
 .level-description {
   text-align: center;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-secondary, #666);
   font-size: 1rem;
   margin-bottom: 28px;
   max-width: 600px;
@@ -270,9 +271,9 @@
 
 /* ── Loading ──────────────────────────────────── */
 
-.loading {
+.curriculum-page .loading {
   text-align: center;
-  color: white;
+  color: var(--text-secondary, #666);
   font-size: 1.5rem;
   padding: 50px;
 }
