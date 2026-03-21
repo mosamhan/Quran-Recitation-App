@@ -366,12 +366,13 @@ def compute_user_progress(user_id: int, db_session) -> dict:
     Returns dict keyed by lesson_id with status: 'completed', 'unlocked', 'locked'.
     """
     from models import RecitationSession
+    from sqlalchemy import func
 
     # Gather best accuracy per verse for this user
     sessions = (
         db_session.query(
             RecitationSession.verse_id,
-            db_session.func.max(RecitationSession.accuracy_score).label('best')
+            func.max(RecitationSession.accuracy_score).label('best')
         )
         .filter_by(user_id=user_id)
         .group_by(RecitationSession.verse_id)
