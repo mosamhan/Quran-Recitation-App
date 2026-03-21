@@ -11,6 +11,9 @@ import { getEncouragement, getSurahDifficulty, getDifficultyLabel, getDifficulty
 import TajweedText from '../components/TajweedText';
 import TajweedLegend from '../components/TajweedLegend';
 import SessionReward from '../components/SessionReward';
+import LiveVerseHighlighter from '../components/LiveVerseHighlighter';
+import AudioWaveform from '../components/AudioWaveform';
+import AccuracyRing from '../components/AccuracyRing';
 import './PracticePage.css';
 
 const PracticePage = () => {
@@ -25,6 +28,9 @@ const PracticePage = () => {
   const [streamingSessionKey, setStreamingSessionKey] = useState(null);
   const [realTimeMistakes, setRealTimeMistakes] = useState([]);
   const [recordingProgress, setRecordingProgress] = useState(0);
+  const [expectedWords, setExpectedWords] = useState([]);
+  const [wordStatuses, setWordStatuses] = useState([]);
+  const [liveAccuracy, setLiveAccuracy] = useState(100);
   const errorAudioRef = useRef(null);
   
   // Chapter and verse selection
@@ -282,6 +288,9 @@ const PracticePage = () => {
         streamingSessionKeyRef.current = sessionKey; // Store in ref for event handlers
         setRealTimeMistakes([]);
         setRecordingProgress(0);
+        setExpectedWords(sessionResponse.data.expected_words || []);
+        setWordStatuses(sessionResponse.data.word_statuses || []);
+        setLiveAccuracy(100);
       } catch (error) {
         console.error('Error starting streaming session:', error);
         console.error('Error details:', error.response?.data || error.message);
@@ -346,6 +355,15 @@ const PracticePage = () => {
                     // Update progress
                     if (analysis.progress !== undefined) {
                       setRecordingProgress(analysis.progress);
+                    }
+
+                    // Update word-level statuses for live highlighting
+                    if (analysis.word_statuses) {
+                      setWordStatuses(analysis.word_statuses);
+                      // Derive live accuracy from word statuses
+                      const total = analysis.word_statuses.filter(s => s !== 'pending').length;
+                      const correct = analysis.word_statuses.filter(s => s === 'correct').length;
+                      if (total > 0) setLiveAccuracy(Math.round((correct / total) * 100));
                     }
 
                     // If mistake detected, play error sound immediately
@@ -568,7 +586,10 @@ const PracticePage = () => {
     setStreamingSessionKey(null);
     setRealTimeMistakes([]);
     setRecordingProgress(0);
-    
+    setExpectedWords([]);
+    setWordStatuses([]);
+    setLiveAccuracy(100);
+
     // Clean up stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -688,16 +709,49 @@ const PracticePage = () => {
                 )}
 
                 {isRecording && (
-                  <div className="recording-status">
-                    <div className="recording-indicator"></div>
-                    <div className="recording-info">
-                      <p>Recording... {recordingProgress > 0 && `${recordingProgress.toFixed(0)}%`}</p>
+                  <div className="recording-live-panel">
+                    {/* Live verse highlighting */}
+                    {expectedWords.length > 0 && (
+                      <LiveVerseHighlighter
+                        words={expectedWords}
+                        wordStatuses={wordStatuses}
+                      />
+                    )}
+
+                    {/* Waveform + accuracy row */}
+                    <div className="live-feedback-row">
+                      <div className="live-waveform-wrap">
+                        <AudioWaveform stream={streamRef.current} isActive={isRecording} />
+                      </div>
+                      <AccuracyRing accuracy={liveAccuracy} size={90} />
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="live-progress">
+                      <div className="live-progress-bar">
+                        <div
+                          className="live-progress-fill"
+                          style={{ width: `${recordingProgress}%` }}
+                        />
+                      </div>
+                      <span className="live-progress-text">
+                        {recordingProgress > 0 ? `${recordingProgress.toFixed(0)}%` : 'Listening...'}
+                      </span>
+                    </div>
+
+                    {/* Status line */}
+                    <div className="live-status-line">
+                      <div className="recording-indicator"></div>
+                      <span>Recording</span>
                       {realTimeMistakes.length > 0 && (
-                        <p className="mistakes-count">⚠️ {realTimeMistakes.length} mistake{realTimeMistakes.length !== 1 ? 's' : ''} detected</p>
+                        <span className="mistakes-count">
+                          {realTimeMistakes.length} mistake{realTimeMistakes.length !== 1 ? 's' : ''}
+                        </span>
                       )}
                     </div>
-                    <button onClick={stopRecording} className="btn-secondary">
-                      ⏹ Stop Recording
+
+                    <button onClick={stopRecording} className="btn-stop-recording">
+                      Stop Recording
                     </button>
                   </div>
                 )}
