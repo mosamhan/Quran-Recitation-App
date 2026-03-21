@@ -18,6 +18,9 @@ from gamification import (
     get_gamification_stats, record_practice, get_or_create_streak,
     UserStreak, UserBadge
 )
+from curriculum import (
+    get_curriculum, get_lesson, get_lessons_for_level, compute_user_progress
+)
 
 # Optional imports for annotation system (only import if needed)
 try:
@@ -723,6 +726,60 @@ def all_badges():
     """Get all possible badge definitions."""
     from gamification import BADGE_DEFINITIONS
     return jsonify({'badges': BADGE_DEFINITIONS})
+
+
+# ==================== Curriculum Endpoints ====================
+
+@app.route('/api/curriculum', methods=['GET'])
+def curriculum_overview():
+    """Return the full curriculum with user progress if user_id provided."""
+    user_id = request.args.get('user_id', type=int)
+    raw = get_curriculum()
+
+    # Build a serialisable copy with optional progress overlay
+    progress = {}
+    if user_id:
+        progress = compute_user_progress(user_id, db.session)
+
+    result = {}
+    for level, data in raw.items():
+        lessons = []
+        for lesson in data['lessons']:
+            lp = progress.get(lesson['id'], {})
+            lessons.append({
+                **lesson,
+                'status': lp.get('status', 'locked'),
+                'verses_completed': lp.get('verses_completed', 0),
+                'verses_total': lp.get('verses_total', 0),
+            })
+        result[level] = {
+            'title': data['title'],
+            'title_child': data.get('title_child', data['title']),
+            'description': data['description'],
+            'lessons': lessons,
+        }
+    return jsonify(result)
+
+
+@app.route('/api/curriculum/lesson/<lesson_id>', methods=['GET'])
+def curriculum_lesson(lesson_id):
+    """Return a single lesson with user progress."""
+    lesson = get_lesson(lesson_id)
+    if not lesson:
+        return jsonify({'error': 'Lesson not found'}), 404
+
+    user_id = request.args.get('user_id', type=int)
+    progress = {}
+    if user_id:
+        all_progress = compute_user_progress(user_id, db.session)
+        progress = all_progress.get(lesson_id, {})
+
+    return jsonify({
+        **lesson,
+        'status': progress.get('status', 'locked'),
+        'verses_completed': progress.get('verses_completed', 0),
+        'verses_total': progress.get('verses_total', 0),
+    })
 
 
 # ==================== Annotation Endpoints ====================
