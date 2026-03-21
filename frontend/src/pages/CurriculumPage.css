@@ -1,0 +1,296 @@
+.curriculum-page {
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+.curriculum-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  text-align: center;
+  margin: 30px 0 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Level Tabs ───────────────────────────────── */
+
+.level-tabs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.level-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 24px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--card-radius, 14px);
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.level-tab:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.level-tab.active {
+  background: var(--card-bg, white);
+  color: var(--text-primary, #2c3e50);
+  border-color: var(--primary-color, #667eea);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.level-tab-name {
+  font-size: 1rem;
+}
+
+.level-tab-progress {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.level-description {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1rem;
+  margin-bottom: 28px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── Lessons List ─────────────────────────────── */
+
+.lessons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.lesson-card {
+  display: flex;
+  gap: 16px;
+  background: var(--card-bg, white);
+  border-radius: var(--card-radius, 16px);
+  padding: 22px;
+  box-shadow: var(--card-shadow, 0 4px 15px rgba(0, 0, 0, 0.08));
+  cursor: pointer;
+  transition: all var(--animation-speed, 0.3s) ease;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.lesson-card:hover {
+  transform: translateY(var(--hover-lift, -3px));
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.lesson-card--locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+}
+
+.lesson-card--locked:hover {
+  transform: none;
+  box-shadow: var(--card-shadow, 0 4px 15px rgba(0, 0, 0, 0.08));
+}
+
+.lesson-card--completed {
+  border-left: 4px solid #27ae60;
+}
+
+.lesson-card--unlocked {
+  border-left: 4px solid var(--primary-color, #667eea);
+}
+
+/* ── Lesson Number ────────────────────────────── */
+
+.lesson-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  color: white;
+  background: var(--primary-gradient, linear-gradient(135deg, #667eea, #764ba2));
+}
+
+.lesson-card--completed .lesson-number {
+  background: #27ae60;
+}
+
+.lesson-card--locked .lesson-number {
+  background: #b0b8c4;
+}
+
+/* ── Lesson Body ──────────────────────────────── */
+
+.lesson-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.lesson-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.lesson-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary, #2c3e50);
+  margin: 0;
+}
+
+.lesson-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+/* ── Objectives ───────────────────────────────── */
+
+.lesson-objectives {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lesson-objectives li {
+  font-size: 0.82rem;
+  color: var(--text-muted, #999);
+  padding-left: 18px;
+  position: relative;
+}
+
+.lesson-objectives li::before {
+  content: '\2022';
+  position: absolute;
+  left: 4px;
+  color: var(--primary-color, #667eea);
+  font-weight: 800;
+}
+
+/* ── Verse Progress ───────────────────────────── */
+
+.lesson-verse-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.lesson-verse-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.lesson-verse-fill {
+  height: 100%;
+  background: var(--primary-gradient, linear-gradient(135deg, #667eea, #764ba2));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.lesson-verse-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted, #999);
+  white-space: nowrap;
+}
+
+/* ── Status Badge ─────────────────────────────── */
+
+.lesson-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.lesson-status--completed {
+  background: rgba(39, 174, 96, 0.12);
+  color: #27ae60;
+}
+
+.lesson-status--unlocked {
+  background: rgba(102, 126, 234, 0.12);
+  color: var(--primary-color, #667eea);
+}
+
+.lesson-status--locked {
+  background: rgba(0, 0, 0, 0.06);
+  color: #b0b8c4;
+}
+
+/* ── XP Reward ────────────────────────────────── */
+
+.lesson-xp {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--accent-color, #FFD93D);
+}
+
+/* ── Connector Line ───────────────────────────── */
+
+.lesson-connector {
+  width: 3px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 0 0 0 39px;
+}
+
+/* ── Loading ──────────────────────────────────── */
+
+.loading {
+  text-align: center;
+  color: white;
+  font-size: 1.5rem;
+  padding: 50px;
+}
+
+/* ── Responsive ───────────────────────────────── */
+
+@media (max-width: 768px) {
+  .level-tabs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .level-tab {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .lesson-card {
+    padding: 16px;
+  }
+}

@@ -33,6 +33,12 @@ const Navigation = () => {
           Practice
         </Link>
         <Link
+          to="/curriculum"
+          className={`nav-link ${location.pathname === '/curriculum' ? 'active' : ''}`}
+        >
+          Learn
+        </Link>
+        <Link
           to="/progress"
           className={`nav-link ${location.pathname === '/progress' ? 'active' : ''}`}
         >

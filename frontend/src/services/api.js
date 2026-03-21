@@ -84,4 +84,9 @@ export default {
   // Gamification endpoints
   getGamificationStats: (userId) => api.get(`/gamification/stats/${userId}`),
   getAllBadges: () => api.get('/gamification/badges'),
+
+  // Curriculum endpoints
+  getCurriculum: (userId) => api.get('/curriculum', { params: { user_id: userId } }),
+  getCurriculumLesson: (lessonId, userId) =>
+    api.get(`/curriculum/lesson/${lessonId}`, { params: { user_id: userId } }),
 };

@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import PracticePage from './pages/PracticePage';
 import ProgressPage from './pages/ProgressPage';
 import QuranPage from './pages/QuranPage';
+import CurriculumPage from './pages/CurriculumPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserProvider } from './context/UserContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -49,6 +50,11 @@ function App() {
             <Route path="/progress" element={
               <ProtectedRoute>
                 <ProgressPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/curriculum" element={
+              <ProtectedRoute>
+                <CurriculumPage />
               </ProtectedRoute>
             } />
 
