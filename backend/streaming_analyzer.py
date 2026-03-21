@@ -9,7 +9,7 @@ from riva_client import RivaClient
 
 class StreamingAnalyzer:
     """Analyzes audio in real-time and detects pronunciation mistakes"""
-    
+
     def __init__(self, riva_client: RivaClient):
         self.riva_client = riva_client
         self.expected_text = ""
@@ -17,7 +17,11 @@ class StreamingAnalyzer:
         self.current_transcription = ""
         self.mistakes_detected = []
         self.last_checked_position = 0
-        
+        # Word-level tracking for live highlighting
+        self.expected_words = []           # Original words (with diacritics)
+        self.expected_words_normalized = [] # Normalized words (no diacritics)
+        self.word_statuses = []            # 'pending', 'correct', 'incorrect', 'current'
+
     def set_expected_text(self, expected_text: str):
         """Set the expected verse text"""
         # Clean and normalize expected text
@@ -27,6 +31,12 @@ class StreamingAnalyzer:
         self.current_transcription = ""
         self.mistakes_detected = []
         self.last_checked_position = 0
+        # Build word lists for word-level tracking
+        self.expected_words = self.expected_text_normalized.split()
+        self.expected_words_normalized = [
+            self.riva_client._normalize_arabic(w) for w in self.expected_words
+        ]
+        self.word_statuses = ['pending'] * len(self.expected_words)
     
     def analyze_chunk(self, audio_chunk_base64: str) -> Dict[str, Any]:
         """
@@ -44,9 +54,10 @@ class StreamingAnalyzer:
                     'has_mistake': False,
                     'current_transcription': self.current_transcription,
                     'progress': self._calculate_progress(),
-                    'chunk_transcription': ''
+                    'chunk_transcription': '',
+                    'word_statuses': self.word_statuses,
                 }
-            
+
             # Clean and normalize chunk transcription
             chunk_clean = chunk_transcription.strip()
             if not chunk_clean:
@@ -54,7 +65,8 @@ class StreamingAnalyzer:
                     'has_mistake': False,
                     'current_transcription': self.current_transcription,
                     'progress': self._calculate_progress(),
-                    'chunk_transcription': ''
+                    'chunk_transcription': '',
+                    'word_statuses': self.word_statuses,
                 }
             
             # Append to current transcription (with space separator)
@@ -68,13 +80,17 @@ class StreamingAnalyzer:
             
             # Check for mistakes in real-time
             mistake = self._check_for_mistake()
-            
+
+            # Update word-level statuses for live highlighting
+            self._update_word_statuses()
+
             result = {
                 'has_mistake': mistake is not None,
                 'mistake_details': mistake,
                 'current_transcription': self.current_transcription,
                 'progress': self._calculate_progress(),
-                'chunk_transcription': chunk_transcription
+                'chunk_transcription': chunk_transcription,
+                'word_statuses': self.word_statuses,
             }
             
             # Log for debugging
@@ -90,9 +106,54 @@ class StreamingAnalyzer:
                 'has_mistake': False,
                 'current_transcription': self.current_transcription,
                 'progress': self._calculate_progress(),
+                'word_statuses': self.word_statuses,
                 'error': str(e)
             }
     
+    def _update_word_statuses(self):
+        """Update per-word statuses based on current transcription"""
+        if not self.expected_words_normalized or not self.current_transcription:
+            return
+
+        transcribed_norm = self.riva_client._normalize_arabic(self.current_transcription)
+        transcribed_words = transcribed_norm.split()
+        num_transcribed = len(transcribed_words)
+        num_expected = len(self.expected_words_normalized)
+
+        # Use SequenceMatcher on word lists for alignment
+        matcher = difflib.SequenceMatcher(
+            None, self.expected_words_normalized, transcribed_words
+        )
+
+        # Reset all to pending first
+        self.word_statuses = ['pending'] * num_expected
+
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == 'equal':
+                for idx in range(i1, i2):
+                    self.word_statuses[idx] = 'correct'
+            elif tag == 'replace':
+                for idx in range(i1, i2):
+                    self.word_statuses[idx] = 'incorrect'
+            elif tag == 'delete':
+                # Expected words not matched by transcription – if they fall
+                # before the furthest transcribed word they were skipped (incorrect),
+                # otherwise still pending.
+                for idx in range(i1, i2):
+                    if idx < num_transcribed:
+                        self.word_statuses[idx] = 'incorrect'
+
+        # Mark the next pending word after the last non-pending as 'current'
+        last_active = -1
+        for idx in range(num_expected - 1, -1, -1):
+            if self.word_statuses[idx] in ('correct', 'incorrect'):
+                last_active = idx
+                break
+
+        next_word = last_active + 1
+        if next_word < num_expected and self.word_statuses[next_word] == 'pending':
+            self.word_statuses[next_word] = 'current'
+
     def _check_for_mistake(self) -> Optional[Dict[str, Any]]:
         """Check if current transcription has mistakes compared to expected text"""
         if not self.expected_text_normalized or not self.current_transcription:

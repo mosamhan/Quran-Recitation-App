@@ -283,7 +283,9 @@ def start_streaming_analysis():
         
         return jsonify({
             'session_key': session_key,
-            'status': 'started'
+            'status': 'started',
+            'expected_words': analyzer.expected_words,
+            'word_statuses': analyzer.word_statuses,
         }), 200
         
     except Exception as e:
