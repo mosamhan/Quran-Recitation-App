@@ -46,6 +46,14 @@ Thumbs.db
 dist/
 build/
 
+# Large ML model files
+*.nemo
+*.onnx
+*.pt
+*.pth
+*.bin
+*.h5
+
 
 
 
