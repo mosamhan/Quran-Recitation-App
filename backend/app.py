@@ -13,6 +13,7 @@ from verses import get_all_verses, get_verse
 from quran_api import QuranAPIService
 from streaming_analyzer import StreamingAnalyzer
 from audio_validator import AudioValidator
+from tajweed_rules import detect_tajweed_rules, get_all_rules as get_all_tajweed_rules
 
 # Optional imports for annotation system (only import if needed)
 try:
@@ -673,6 +674,29 @@ def get_reciters():
     """Get list of available reciters"""
     reciters = QuranAPIService.get_available_reciters()
     return jsonify({'reciters': reciters})
+
+# ==================== Tajweed Endpoints ====================
+
+@app.route('/api/tajweed/rules', methods=['GET'])
+def get_tajweed_rules():
+    """Get all tajweed rule definitions (for legend/UI)"""
+    return jsonify({'rules': get_all_tajweed_rules()})
+
+
+@app.route('/api/tajweed/analyze', methods=['POST'])
+def analyze_tajweed():
+    """Detect tajweed rules in a given Arabic text"""
+    data = request.json
+    text = data.get('text', '')
+    if not text:
+        return jsonify({'error': 'text is required'}), 400
+
+    rules = detect_tajweed_rules(text)
+    return jsonify({
+        'text': text,
+        'rules': rules
+    })
+
 
 # ==================== Annotation Endpoints ====================
 # Based on Tarteel's ML Journey Part 2

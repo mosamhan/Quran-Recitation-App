@@ -7,6 +7,7 @@ import difflib
 from typing import List, Dict, Any, Optional
 import re
 import os
+from tajweed_rules import detect_tajweed_rules, classify_tajweed_mistake, get_all_rules
 
 # Try to import Riva gRPC client
 try:
@@ -237,35 +238,47 @@ class RivaClient:
     
     def compare_recitation(self, transcribed: str, expected: str) -> List[Dict[str, Any]]:
         """
-        Compare transcribed text with expected text and identify mistakes
-        
-        Args:
-            transcribed: The text transcribed from user's recitation
-            expected: The correct expected text
-            
-        Returns:
-            List of mistake dictionaries
+        Compare transcribed text with expected text and identify mistakes.
+        Enriches each mistake with tajweed rule info when applicable.
         """
         mistakes = []
-        
-        # Normalize Arabic text (remove diacritics for comparison, but keep for analysis)
+
         transcribed_normalized = self._normalize_arabic(transcribed)
         expected_normalized = self._normalize_arabic(expected)
-        
-        # Use difflib to find differences
+
         diff = difflib.SequenceMatcher(None, expected_normalized, transcribed_normalized)
-        
+
         for tag, i1, i2, j1, j2 in diff.get_opcodes():
             if tag in ['replace', 'delete', 'insert']:
-                mistake = {
-                    'type': self._classify_mistake_type(tag, expected[i1:i2], transcribed[j1:j2]),
-                    'position': i1,
-                    'incorrect': transcribed[j1:j2] if j1 < j2 else '',
-                    'correct': expected[i1:i2] if i1 < i2 else '',
-                    'suggestion': self._generate_suggestion(expected[i1:i2], transcribed[j1:j2])
-                }
+                correct_segment = expected[i1:i2] if i1 < i2 else ''
+                incorrect_segment = transcribed[j1:j2] if j1 < j2 else ''
+
+                # Check if this mistake overlaps with a tajweed rule
+                tajweed_info = classify_tajweed_mistake(expected, incorrect_segment, i1)
+
+                if tajweed_info['is_tajweed']:
+                    mistake = {
+                        'type': 'tajweed',
+                        'position': i1,
+                        'incorrect': incorrect_segment,
+                        'correct': correct_segment,
+                        'suggestion': tajweed_info['suggestion'],
+                        'tajweed_rule': tajweed_info['rule_id'],
+                        'tajweed_name': tajweed_info['rule_name'],
+                        'tajweed_arabic': tajweed_info['rule_arabic'],
+                        'tajweed_description': tajweed_info['rule_description'],
+                        'tajweed_color': tajweed_info['rule_color'],
+                    }
+                else:
+                    mistake = {
+                        'type': self._classify_mistake_type(tag, correct_segment, incorrect_segment),
+                        'position': i1,
+                        'incorrect': incorrect_segment,
+                        'correct': correct_segment,
+                        'suggestion': self._generate_suggestion(correct_segment, incorrect_segment),
+                    }
                 mistakes.append(mistake)
-        
+
         return mistakes
     
     def _normalize_arabic(self, text: str) -> str:
