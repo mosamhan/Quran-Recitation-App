@@ -8,6 +8,8 @@ import Bismillah from '../components/Bismillah';
 import ChapterVerseSelector from '../components/ChapterVerseSelector';
 import { useTheme } from '../context/ThemeContext';
 import { getEncouragement, getSurahDifficulty, getDifficultyLabel, getDifficultyClass } from '../utils/adaptiveContent';
+import TajweedText from '../components/TajweedText';
+import TajweedLegend from '../components/TajweedLegend';
 import './PracticePage.css';
 
 const PracticePage = () => {
@@ -667,11 +669,15 @@ const PracticePage = () => {
                     {getDifficultyLabel(getSurahDifficulty(selectedChapter.number), ageGroup)}
                   </span>
                 </div>
-                <div className="arabic-text">{currentVerse.text}</div>
+                <div className="arabic-text">
+                  <TajweedText text={currentVerse.text} showRules={true} />
+                </div>
                 {currentVerse.translation && (
                   <div className="verse-translation">{currentVerse.translation}</div>
                 )}
               </div>
+
+              <TajweedLegend compact={true} />
 
               <div className="recording-controls">
                 {!isRecording && !audioBlob && (
@@ -732,14 +738,33 @@ const PracticePage = () => {
                     <div className="mistakes-section">
                       <h4>Mistakes to Fix:</h4>
                       {result.mistakes.map((mistake, index) => (
-                        <div key={index} className="mistake-item">
-                          <div className="mistake-type">{mistake.type}</div>
+                        <div
+                          key={index}
+                          className="mistake-item"
+                          style={mistake.tajweed_color ? { borderLeftColor: mistake.tajweed_color } : {}}
+                        >
+                          <div className="mistake-type">
+                            {mistake.type}
+                            {mistake.tajweed_name && (
+                              <span
+                                className="tajweed-rule-badge"
+                                style={{ backgroundColor: mistake.tajweed_color }}
+                              >
+                                {mistake.tajweed_name} ({mistake.tajweed_arabic})
+                              </span>
+                            )}
+                          </div>
+                          {mistake.tajweed_description && (
+                            <div className="tajweed-rule-description">
+                              {mistake.tajweed_description}
+                            </div>
+                          )}
                           <div className="mistake-details">
-                            <span className="incorrect">❌ {mistake.incorrect || 'Missing'}</span>
-                            <span className="correct">✅ {mistake.correct || 'Should be'}</span>
+                            <span className="incorrect">{mistake.incorrect || 'Missing'}</span>
+                            <span className="correct">{mistake.correct || 'Should be'}</span>
                           </div>
                           {mistake.suggestion && (
-                            <div className="mistake-suggestion">💡 {mistake.suggestion}</div>
+                            <div className="mistake-suggestion">{mistake.suggestion}</div>
                           )}
                         </div>
                       ))}

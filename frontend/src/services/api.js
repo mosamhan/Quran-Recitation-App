@@ -76,4 +76,8 @@ export default {
     return api.get(`/quran/audio/${chapterNumber}`, { params });
   },
   getReciters: () => api.get('/quran/reciters'),
+
+  // Tajweed endpoints
+  getTajweedRules: () => api.get('/tajweed/rules'),
+  analyzeTajweed: (text) => api.post('/tajweed/analyze', { text }),
 };

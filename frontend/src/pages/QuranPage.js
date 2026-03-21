@@ -7,6 +7,7 @@ import FloatingAudioPlayer from '../components/FloatingAudioPlayer';
 import Bismillah from '../components/Bismillah';
 import { useTheme } from '../context/ThemeContext';
 import { getSurahDifficulty, getDifficultyLabel, getDifficultyClass, isRecommended } from '../utils/adaptiveContent';
+import TajweedText from '../components/TajweedText';
 import './QuranPage.css';
 
 const QuranPage = () => {
@@ -325,7 +326,9 @@ const QuranPage = () => {
                     >
                       <div className="verse-number">{verse.number_in_surah}</div>
                       <div className="verse-content">
-                        <div className="verse-text-arabic">{verse.text}</div>
+                        <div className="verse-text-arabic">
+                          <TajweedText text={verse.text} showRules={true} />
+                        </div>
                         {verse.translation && (
                           <div className="verse-text-translation">{verse.translation}</div>
                         )}
