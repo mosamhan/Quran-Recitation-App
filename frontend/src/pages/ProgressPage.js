@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import Navigation from '../components/Navigation';
+import XPBar from '../components/XPBar';
+import StreakCounter from '../components/StreakCounter';
+import BadgeGrid from '../components/BadgeGrid';
 import './ProgressPage.css';
 
 const ProgressPage = () => {
   const { user } = useUser();
+  const { isChild } = useTheme();
   const navigate = useNavigate();
   const [progress, setProgress] = useState(null);
   const [sessions, setSessions] = useState([]);
+  const [gamification, setGamification] = useState(null);
+  const [allBadges, setAllBadges] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,6 +27,7 @@ const ProgressPage = () => {
 
     loadProgress();
     loadSessions();
+    loadGamification();
   }, [user, navigate]);
 
   const loadProgress = async () => {
@@ -42,6 +50,19 @@ const ProgressPage = () => {
     }
   };
 
+  const loadGamification = async () => {
+    try {
+      const [statsRes, badgesRes] = await Promise.all([
+        api.getGamificationStats(user.id),
+        api.getAllBadges()
+      ]);
+      setGamification(statsRes.data);
+      setAllBadges(badgesRes.data.badges || {});
+    } catch (error) {
+      console.error('Error loading gamification:', error);
+    }
+  };
+
   if (!user || loading) {
     return (
       <div className="progress-page">
@@ -54,6 +75,29 @@ const ProgressPage = () => {
     <div className="progress-page">
       <Navigation />
       <div className="container">
+
+        {gamification && (
+          <div className="gamification-section">
+            <h2 className="page-title">
+              {isChild ? 'Your Adventure' : 'Your Progress'}
+            </h2>
+            <div className="gamification-top-row">
+              <XPBar
+                level={gamification.level}
+                totalXP={gamification.total_xp}
+                xpForNextLevel={gamification.xp_for_next_level}
+              />
+              <StreakCounter
+                currentStreak={gamification.current_streak}
+                longestStreak={gamification.longest_streak}
+              />
+            </div>
+            <BadgeGrid
+              earnedBadges={gamification.badges || []}
+              allBadges={allBadges}
+            />
+          </div>
+        )}
 
         {progress && (
           <div className="stats-grid">

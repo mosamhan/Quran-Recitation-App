@@ -14,6 +14,10 @@ from quran_api import QuranAPIService
 from streaming_analyzer import StreamingAnalyzer
 from audio_validator import AudioValidator
 from tajweed_rules import detect_tajweed_rules, get_all_rules as get_all_tajweed_rules
+from gamification import (
+    get_gamification_stats, record_practice, get_or_create_streak,
+    UserStreak, UserBadge
+)
 
 # Optional imports for annotation system (only import if needed)
 try:
@@ -426,14 +430,18 @@ def finish_streaming_analysis():
         
         # Clean up analyzer
         del active_analyzers[session_key]
-        
+
+        # Record gamification (XP, streaks, badges)
+        gamification_result = record_practice(user_id, accuracy)
+
         return jsonify({
             'session_id': session.id,
             'transcription': final_transcription,
             'expected_text': analyzer.expected_text,
             'accuracy': accuracy,
             'mistakes': mistakes,
-            'feedback': riva_client.generate_feedback(mistakes, accuracy)
+            'feedback': riva_client.generate_feedback(mistakes, accuracy),
+            'gamification': gamification_result,
         }), 200
         
     except Exception as e:
@@ -696,6 +704,23 @@ def analyze_tajweed():
         'text': text,
         'rules': rules
     })
+
+
+# ==================== Gamification Endpoints ====================
+
+@app.route('/api/gamification/stats/<int:user_id>', methods=['GET'])
+def gamification_stats(user_id):
+    """Get full gamification profile: XP, level, streak, badges."""
+    User.query.get_or_404(user_id)
+    stats = get_gamification_stats(user_id)
+    return jsonify(stats)
+
+
+@app.route('/api/gamification/badges', methods=['GET'])
+def all_badges():
+    """Get all possible badge definitions."""
+    from gamification import BADGE_DEFINITIONS
+    return jsonify({'badges': BADGE_DEFINITIONS})
 
 
 # ==================== Annotation Endpoints ====================

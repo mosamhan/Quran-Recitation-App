@@ -10,6 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 import { getEncouragement, getSurahDifficulty, getDifficultyLabel, getDifficultyClass } from '../utils/adaptiveContent';
 import TajweedText from '../components/TajweedText';
 import TajweedLegend from '../components/TajweedLegend';
+import SessionReward from '../components/SessionReward';
 import './PracticePage.css';
 
 const PracticePage = () => {
@@ -771,12 +772,14 @@ const PracticePage = () => {
                     </div>
                   )}
 
+                  <SessionReward gamification={result.gamification} />
+
                   <div className="result-actions">
                     <button onClick={resetPractice} className="btn-primary">
-                      🔄 Practice Again
+                      Practice Again
                     </button>
                     <button onClick={markAsMemorized} className="btn-secondary">
-                      ⭐ Mark as Memorized
+                      Mark as Memorized
                     </button>
                   </div>
                 </div>
