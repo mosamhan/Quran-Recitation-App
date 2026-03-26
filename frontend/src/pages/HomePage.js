@@ -29,17 +29,6 @@ const HomePage = () => {
             </button>
           </div>
 
-          <div className="features-preview">
-            <div className="feature-item">
-              <span className="feature-emoji">Voice Recognition</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-emoji">Progress Tracking</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-emoji">Mistake Correction</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
