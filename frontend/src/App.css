@@ -75,36 +75,7 @@
   padding: 20px;
 }
 
-/* Navigation - theme-aware */
-.nav {
-  display: flex;
-  justify-content: space-around;
-  background: var(--nav-bg, rgba(255, 255, 255, 0.95));
-  padding: 15px;
-  border-radius: 0 0 var(--card-radius, 20px) var(--card-radius, 20px);
-  box-shadow: var(--nav-shadow, 0 4px 15px rgba(0, 0, 0, 0.1));
-  margin-bottom: 20px;
-}
-
-.nav-link {
-  text-decoration: none;
-  color: var(--primary-color, #4A90E2);
-  font-weight: 700;
-  font-size: var(--font-size-base, 1.1rem);
-  padding: 10px 20px;
-  border-radius: var(--btn-radius, 15px);
-  transition: all var(--animation-speed, 0.3s) ease;
-}
-
-.nav-link:hover {
-  background: var(--primary-color, #4A90E2);
-  color: white;
-}
-
-.nav-link.active {
-  background: var(--primary-gradient, #4A90E2);
-  color: white;
-}
+/* Navigation styles are in Navigation.css */
 
 /* Difficulty badges */
 .difficulty-badge {
@@ -167,10 +138,5 @@
   .card {
     margin: 10px;
     padding: 20px;
-  }
-
-  .nav {
-    flex-direction: column;
-    gap: 10px;
   }
 }
