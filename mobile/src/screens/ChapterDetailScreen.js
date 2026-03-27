@@ -3,7 +3,12 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   ActivityIndicator, SafeAreaView,
 } from 'react-native';
-import { Audio } from 'expo-av';
+let Audio;
+try {
+  Audio = require('expo-av').Audio;
+} catch {
+  Audio = null;
+}
 import api from '../services/api';
 import { colors, spacing, borderRadius, fonts } from '../utils/theme';
 
@@ -33,6 +38,7 @@ export default function ChapterDetailScreen({ route }) {
   };
 
   const playAudio = async (verse) => {
+    if (!Audio) return;
     try {
       if (sound) {
         await sound.unloadAsync();

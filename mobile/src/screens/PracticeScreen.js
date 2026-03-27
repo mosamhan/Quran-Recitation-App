@@ -3,7 +3,12 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   SafeAreaView, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
-import { Audio } from 'expo-av';
+let Audio;
+try {
+  Audio = require('expo-av').Audio;
+} catch {
+  Audio = null;
+}
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 import { colors, spacing, borderRadius, fonts } from '../utils/theme';
@@ -38,6 +43,10 @@ export default function PracticeScreen() {
   };
 
   const startRecording = async () => {
+    if (!Audio) {
+      Alert.alert('Not Available', 'Audio recording requires a development build. Run `npx expo run:ios` to use this feature.');
+      return;
+    }
     try {
       const permission = await Audio.requestPermissionsAsync();
       if (!permission.granted) {
