@@ -28,7 +28,7 @@ export default function ChapterDetailScreen({ route }) {
 
   const loadVerses = async () => {
     try {
-      const res = await api.getQuranChapter(chapter.id);
+      const res = await api.getQuranChapter(chapter.number || chapter.id);
       setVerses(res.data.verses || res.data);
     } catch {
       // Silent fail
@@ -48,7 +48,7 @@ export default function ChapterDetailScreen({ route }) {
         setPlayingVerse(null);
         return;
       }
-      const res = await api.getChapterAudio(chapter.id, verse.verse_number);
+      const res = await api.getChapterAudio(chapter.number || chapter.id, verse.verse_number);
       const audioUrl = res.data.audio_url;
       if (audioUrl) {
         const { sound: newSound } = await Audio.Sound.createAsync(
@@ -102,10 +102,10 @@ export default function ChapterDetailScreen({ route }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{chapter.name_simple}</Text>
+        <Text style={styles.title}>{chapter.name_simple || chapter.english_name}</Text>
         <Text style={styles.titleArabic}>{chapter.name_arabic}</Text>
         <Text style={styles.meta}>
-          {chapter.verses_count} verses • {chapter.revelation_place}
+          {chapter.number_of_verses || chapter.verses_count} verses • {chapter.revelation_type || chapter.revelation_place}
         </Text>
       </View>
       <FlatList
