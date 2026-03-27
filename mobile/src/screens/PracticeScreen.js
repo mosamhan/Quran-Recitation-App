@@ -4,6 +4,7 @@ import {
   Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
@@ -193,7 +194,12 @@ export default function PracticeScreen() {
             <ActivityIndicator color="#fff" size="large" />
           ) : (
             <>
-              <Text style={s.recordIcon}>{isRecording ? '⏹' : '🎙'}</Text>
+              <Ionicons
+                name={isRecording ? 'stop-circle-outline' : 'mic-outline'}
+                size={36}
+                color="#fff"
+                style={{ marginBottom: theme.spacing.xs }}
+              />
               <Text style={s.recordLabel}>
                 {isRecording ? 'Stop Recording' : 'Start Recording'}
               </Text>

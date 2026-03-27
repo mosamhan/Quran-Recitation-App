@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, TextInput,
+  ActivityIndicator, TextInput, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
@@ -77,7 +77,10 @@ export default function QuranScreen({ navigation }) {
   return (
     <SafeAreaView style={s.container}>
       <View style={s.header}>
-        <Text style={s.title}>Quran</Text>
+        <View style={s.headerRow}>
+          <Image source={require('../assets/logo.png')} style={s.headerLogo} resizeMode="contain" />
+          <Text style={s.title}>Quran</Text>
+        </View>
         <TextInput
           style={s.searchInput}
           placeholder="Search chapters..."
@@ -102,11 +105,16 @@ const createStyles = (theme) =>
     container: { flex: 1, backgroundColor: theme.colors.bgPrimary },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     header: { padding: theme.spacing.lg, paddingBottom: theme.spacing.md },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacing.md,
+    },
+    headerLogo: { width: 32, height: 32, marginRight: theme.spacing.sm },
     title: {
       fontSize: theme.fonts.sizeTitle,
       ...theme.fonts.extraBold,
       color: theme.colors.textPrimary,
-      marginBottom: theme.spacing.md,
     },
     searchInput: {
       backgroundColor: theme.colors.bgCard,

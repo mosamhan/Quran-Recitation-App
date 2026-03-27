@@ -1,9 +1,10 @@
 import React from 'react';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { ActivityIndicator, View, Image } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
 import { UserProvider } from './src/context/UserContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
@@ -35,7 +36,7 @@ function QuranStackNavigator() {
         component={ChapterDetailScreen}
         options={({ route }) => ({
           headerShown: true,
-          title: route.params?.chapter?.name_simple || 'Chapter',
+          title: route.params?.chapter?.name_simple || route.params?.chapter?.english_name || 'Chapter',
           headerTintColor: theme.colors.primary,
           headerStyle: { backgroundColor: theme.colors.bgPrimary },
           headerTitleStyle: { ...theme.fonts.bold, color: theme.colors.textPrimary },
@@ -45,11 +46,19 @@ function QuranStackNavigator() {
   );
 }
 
+const TAB_ICONS = {
+  Quran: { focused: 'book', unfocused: 'book-outline' },
+  Practice: { focused: 'mic', unfocused: 'mic-outline' },
+  Learn: { focused: 'school', unfocused: 'school-outline' },
+  Progress: { focused: 'stats-chart', unfocused: 'stats-chart-outline' },
+  Settings: { focused: 'settings', unfocused: 'settings-outline' },
+};
+
 function MainTabs() {
   const { theme } = useTheme();
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textMuted,
@@ -61,48 +70,18 @@ function MainTabs() {
           height: 60,
         },
         tabBarLabelStyle: { fontSize: 11, ...theme.fonts.semiBold },
-      }}
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons = TAB_ICONS[route.name];
+          const iconName = focused ? icons.focused : icons.unfocused;
+          return <Ionicons name={iconName} size={22} color={color} />;
+        },
+      })}
     >
-      <Tab.Screen
-        name="Quran"
-        component={QuranStackNavigator}
-        options={{
-          tabBarLabel: 'Quran',
-          tabBarIcon: () => <Text style={{ fontSize: 22 }}>📖</Text>,
-        }}
-      />
-      <Tab.Screen
-        name="Practice"
-        component={PracticeScreen}
-        options={{
-          tabBarLabel: 'Practice',
-          tabBarIcon: () => <Text style={{ fontSize: 22 }}>🎙</Text>,
-        }}
-      />
-      <Tab.Screen
-        name="Learn"
-        component={CurriculumScreen}
-        options={{
-          tabBarLabel: 'Learn',
-          tabBarIcon: () => <Text style={{ fontSize: 22 }}>🎯</Text>,
-        }}
-      />
-      <Tab.Screen
-        name="Progress"
-        component={ProgressScreen}
-        options={{
-          tabBarLabel: 'Progress',
-          tabBarIcon: () => <Text style={{ fontSize: 22 }}>📊</Text>,
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          tabBarLabel: 'Settings',
-          tabBarIcon: () => <Text style={{ fontSize: 22 }}>⚙️</Text>,
-        }}
-      />
+      <Tab.Screen name="Quran" component={QuranStackNavigator} />
+      <Tab.Screen name="Practice" component={PracticeScreen} />
+      <Tab.Screen name="Learn" component={CurriculumScreen} />
+      <Tab.Screen name="Progress" component={ProgressScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }

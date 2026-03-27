@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
@@ -47,9 +48,9 @@ export default function CurriculumScreen() {
   const lessons = currentLevel?.lessons || [];
 
   const getStatusStyle = (lesson) => {
-    if (lesson.completed) return { bg: theme.colors.success, icon: '✓' };
-    if (lesson.unlocked) return { bg: theme.colors.primary, icon: '▶' };
-    return { bg: theme.colors.textMuted, icon: '🔒' };
+    if (lesson.completed) return { bg: theme.colors.success, icon: 'checkmark' };
+    if (lesson.unlocked) return { bg: theme.colors.primary, icon: 'play' };
+    return { bg: theme.colors.textMuted, icon: 'lock-closed-outline' };
   };
 
   const renderLesson = ({ item }) => {
@@ -57,7 +58,7 @@ export default function CurriculumScreen() {
     return (
       <View style={[s.lessonCard, !item.unlocked && s.lessonLocked]}>
         <View style={[s.statusBadge, { backgroundColor: status.bg }]}>
-          <Text style={s.statusIcon}>{status.icon}</Text>
+          <Ionicons name={status.icon} size={18} color="#fff" />
         </View>
         <View style={s.lessonInfo}>
           <Text style={[s.lessonTitle, !item.unlocked && s.lessonTitleLocked]}>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Image,
 } from 'react-native';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
@@ -48,7 +48,7 @@ export default function LoginScreen({ navigation }) {
           <Text style={s.closeBtnText}>✕</Text>
         </TouchableOpacity>
 
-        <Text style={s.logo}>IQRA</Text>
+        <Image source={require('../assets/logo.png')} style={s.logoImage} resizeMode="contain" />
         <Text style={s.subtitle}>Sign in to sync your progress</Text>
 
         <TextInput
@@ -131,12 +131,10 @@ const createStyles = (theme) =>
       alignItems: 'center',
     },
     closeBtnText: { fontSize: 16, color: theme.colors.textMuted },
-    logo: {
-      fontSize: 36,
-      ...theme.fonts.extraBold,
-      color: theme.colors.primary,
-      textAlign: 'center',
-      letterSpacing: 6,
+    logoImage: {
+      width: 80,
+      height: 80,
+      alignSelf: 'center',
       marginBottom: theme.spacing.sm,
     },
     subtitle: {

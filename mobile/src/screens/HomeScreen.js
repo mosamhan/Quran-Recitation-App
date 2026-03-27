@@ -1,52 +1,46 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../context/UserContext';
-import { colors, spacing, borderRadius, fonts } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useUser();
+  const { theme } = useTheme();
   const displayName = user?.display_name || user?.username || 'Learner';
+  const s = createStyles(theme);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.center}>
-        <View style={styles.card}>
-          <Text style={styles.logo}>IQRA</Text>
-          <Text style={styles.tagline}>Learn to recite the Quran</Text>
+    <SafeAreaView style={s.container}>
+      <View style={s.center}>
+        <View style={s.card}>
+          <Image source={require('../assets/logo.png')} style={s.logoImage} resizeMode="contain" />
+          <Text style={s.tagline}>Learn to recite the Quran</Text>
 
-          <Text style={styles.welcome}>
-            Welcome back, <Text style={styles.welcomeBold}>{displayName}</Text>
+          <Text style={s.welcome}>
+            Welcome back, <Text style={s.welcomeBold}>{displayName}</Text>
           </Text>
 
           <TouchableOpacity
-            style={styles.button}
+            style={s.button}
             onPress={() => navigation.navigate('Practice')}
           >
-            <Text style={styles.buttonText}>Continue Learning</Text>
+            <Text style={s.buttonText}>Continue Learning</Text>
           </TouchableOpacity>
 
-          <View style={styles.quickLinks}>
-            <TouchableOpacity
-              style={styles.linkCard}
-              onPress={() => navigation.navigate('Quran')}
-            >
-              <Text style={styles.linkEmoji}>📖</Text>
-              <Text style={styles.linkLabel}>Browse Quran</Text>
+          <View style={s.quickLinks}>
+            <TouchableOpacity style={s.linkCard} onPress={() => navigation.navigate('Quran')}>
+              <Ionicons name="book-outline" size={22} color={theme.colors.textSecondary} />
+              <Text style={s.linkLabel}>Browse Quran</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.linkCard}
-              onPress={() => navigation.navigate('Curriculum')}
-            >
-              <Text style={styles.linkEmoji}>🎯</Text>
-              <Text style={styles.linkLabel}>Curriculum</Text>
+            <TouchableOpacity style={s.linkCard} onPress={() => navigation.navigate('Curriculum')}>
+              <Ionicons name="school-outline" size={22} color={theme.colors.textSecondary} />
+              <Text style={s.linkLabel}>Curriculum</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.linkCard}
-              onPress={() => navigation.navigate('Progress')}
-            >
-              <Text style={styles.linkEmoji}>📊</Text>
-              <Text style={styles.linkLabel}>Progress</Text>
+            <TouchableOpacity style={s.linkCard} onPress={() => navigation.navigate('Progress')}>
+              <Ionicons name="stats-chart-outline" size={22} color={theme.colors.textSecondary} />
+              <Text style={s.linkLabel}>Progress</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -55,61 +49,44 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgLight },
-  center: { flex: 1, justifyContent: 'center', padding: spacing.lg },
-  card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
-  },
-  logo: {
-    fontSize: 42,
-    ...fonts.extraBold,
-    color: colors.primary,
-    letterSpacing: 8,
-    marginBottom: spacing.xs,
-  },
-  tagline: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
-  },
-  welcome: {
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
-  welcomeBold: { ...fonts.bold, color: colors.primary },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: 16,
-    paddingHorizontal: spacing.xxl,
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: spacing.xl,
-  },
-  buttonText: { color: '#fff', fontSize: 17, ...fonts.bold },
-  quickLinks: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  linkCard: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: colors.bgLight,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginHorizontal: spacing.xs,
-  },
-  linkEmoji: { fontSize: 24, marginBottom: spacing.xs },
-  linkLabel: { fontSize: 12, color: colors.textSecondary, ...fonts.semiBold },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.bgPrimary },
+    center: { flex: 1, justifyContent: 'center', padding: theme.spacing.lg },
+    card: {
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.xl,
+      padding: theme.spacing.xl,
+      alignItems: 'center',
+      shadowColor: theme.colors.cardShadow,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 1,
+      shadowRadius: 20,
+      elevation: 5,
+    },
+    logoImage: { width: 80, height: 80, marginBottom: theme.spacing.sm },
+    tagline: { fontSize: 15, color: theme.colors.textSecondary, marginBottom: theme.spacing.xl },
+    welcome: { fontSize: 18, color: theme.colors.textPrimary, marginBottom: theme.spacing.lg },
+    welcomeBold: { ...theme.fonts.bold, color: theme.colors.primary },
+    button: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.borderRadius.md,
+      paddingVertical: 16,
+      paddingHorizontal: theme.spacing.xxl,
+      alignItems: 'center',
+      width: '100%',
+      marginBottom: theme.spacing.xl,
+    },
+    buttonText: { color: '#fff', fontSize: 17, ...theme.fonts.bold },
+    quickLinks: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
+    linkCard: {
+      flex: 1,
+      alignItems: 'center',
+      backgroundColor: theme.colors.bgPrimary,
+      borderRadius: theme.borderRadius.md,
+      padding: theme.spacing.md,
+      marginHorizontal: theme.spacing.xs,
+      gap: 6,
+    },
+    linkLabel: { fontSize: 12, color: theme.colors.textSecondary, ...theme.fonts.semiBold },
+  });
