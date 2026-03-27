@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  ActivityIndicator, SafeAreaView,
+  ActivityIndicator, TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
-import { colors, spacing, borderRadius, fonts } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
-export default function ProgressScreen() {
-  const { user } = useUser();
+export default function ProgressScreen({ navigation }) {
+  const { user, isAuthenticated } = useUser();
+  const { theme } = useTheme();
   const [stats, setStats] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const s = createStyles(theme);
+
   useEffect(() => {
-    if (user?.id) loadData();
+    if (isAuthenticated && user?.id) {
+      loadData();
+    } else {
+      setLoading(false);
+    }
   }, [user]);
 
   const loadData = async () => {
@@ -34,9 +42,29 @@ export default function ProgressScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={s.centered}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={s.container}>
+        <View style={s.authPromptContainer}>
+          <Text style={s.authEmoji}>📊</Text>
+          <Text style={s.authTitle}>Track Your Progress</Text>
+          <Text style={s.authDesc}>
+            Sign in to save your recitation sessions, earn XP, and track your Quran learning journey.
+          </Text>
+          <TouchableOpacity
+            style={s.authButton}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={s.authButtonText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -48,41 +76,41 @@ export default function ProgressScreen() {
   const badges = stats?.badges || [];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Your Progress</Text>
+    <SafeAreaView style={s.container}>
+      <ScrollView contentContainerStyle={s.scroll}>
+        <Text style={s.title}>Your Progress</Text>
 
         {/* Level & XP */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Level {level}</Text>
-          <View style={styles.xpBarBg}>
-            <View style={[styles.xpBarFill, { width: `${xpProgress * 100}%` }]} />
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Level {level}</Text>
+          <View style={s.xpBarBg}>
+            <View style={[s.xpBarFill, { width: `${xpProgress * 100}%` }]} />
           </View>
-          <Text style={styles.xpText}>
+          <Text style={s.xpText}>
             {xp % xpForNext} / {xpForNext} XP to next level
           </Text>
         </View>
 
         {/* Streak */}
-        <View style={styles.card}>
-          <View style={styles.streakRow}>
-            <Text style={styles.streakEmoji}>🔥</Text>
+        <View style={s.card}>
+          <View style={s.streakRow}>
+            <Text style={s.streakEmoji}>🔥</Text>
             <View>
-              <Text style={styles.streakCount}>{streak} day streak</Text>
-              <Text style={styles.streakSub}>Keep practicing daily!</Text>
+              <Text style={s.streakCount}>{streak} day streak</Text>
+              <Text style={s.streakSub}>Keep practicing daily!</Text>
             </View>
           </View>
         </View>
 
         {/* Badges */}
         {badges.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Badges</Text>
-            <View style={styles.badgeGrid}>
+          <View style={s.card}>
+            <Text style={s.cardTitle}>Badges</Text>
+            <View style={s.badgeGrid}>
               {badges.map((badge, i) => (
-                <View key={i} style={styles.badge}>
-                  <Text style={styles.badgeIcon}>{badge.icon || '🏅'}</Text>
-                  <Text style={styles.badgeName}>{badge.name}</Text>
+                <View key={i} style={s.badge}>
+                  <Text style={s.badgeIcon}>{badge.icon || '🏅'}</Text>
+                  <Text style={s.badgeName}>{badge.name}</Text>
                 </View>
               ))}
             </View>
@@ -90,32 +118,32 @@ export default function ProgressScreen() {
         )}
 
         {/* Recent Sessions */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Recent Sessions</Text>
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Recent Sessions</Text>
           {sessions.length === 0 ? (
-            <Text style={styles.emptyText}>No sessions yet. Start practicing!</Text>
+            <Text style={s.emptyText}>No sessions yet. Start practicing!</Text>
           ) : (
-            sessions.slice(0, 10).map((s, i) => (
-              <View key={i} style={styles.sessionRow}>
+            sessions.slice(0, 10).map((sess, i) => (
+              <View key={i} style={s.sessionRow}>
                 <View>
-                  <Text style={styles.sessionTitle}>
-                    Chapter {s.chapter_number}:{s.verse_number}
+                  <Text style={s.sessionTitle}>
+                    Chapter {sess.chapter_number}:{sess.verse_number}
                   </Text>
-                  <Text style={styles.sessionDate}>
-                    {new Date(s.created_at).toLocaleDateString()}
+                  <Text style={s.sessionDate}>
+                    {new Date(sess.created_at).toLocaleDateString()}
                   </Text>
                 </View>
                 <Text
                   style={[
-                    styles.sessionAccuracy,
+                    s.sessionAccuracy,
                     {
-                      color: (s.accuracy || 0) >= 80 ? colors.success
-                        : (s.accuracy || 0) >= 60 ? colors.warning
-                        : colors.danger,
+                      color: (sess.accuracy || 0) >= 80 ? theme.colors.success
+                        : (sess.accuracy || 0) >= 60 ? theme.colors.warning
+                        : theme.colors.danger,
                     },
                   ]}
                 >
-                  {Math.round(s.accuracy || 0)}%
+                  {Math.round(sess.accuracy || 0)}%
                 </Text>
               </View>
             ))
@@ -126,67 +154,94 @@ export default function ProgressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgLight },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  title: {
-    fontSize: 28,
-    ...fonts.extraBold,
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
-  card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardTitle: {
-    fontSize: 18,
-    ...fonts.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  xpBarBg: {
-    height: 12,
-    backgroundColor: colors.bgLight,
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: spacing.sm,
-  },
-  xpBarFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: 6,
-  },
-  xpText: { fontSize: 13, color: colors.textMuted },
-  streakRow: { flexDirection: 'row', alignItems: 'center' },
-  streakEmoji: { fontSize: 36, marginRight: spacing.md },
-  streakCount: { fontSize: 20, ...fonts.bold, color: colors.textPrimary },
-  streakSub: { fontSize: 14, color: colors.textSecondary },
-  badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  badge: {
-    alignItems: 'center',
-    width: 70,
-  },
-  badgeIcon: { fontSize: 28, marginBottom: 4 },
-  badgeName: { fontSize: 11, color: colors.textSecondary, textAlign: 'center' },
-  sessionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-  },
-  sessionTitle: { fontSize: 15, ...fonts.semiBold, color: colors.textPrimary },
-  sessionDate: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  sessionAccuracy: { fontSize: 20, ...fonts.bold },
-  emptyText: { fontSize: 14, color: colors.textMuted, fontStyle: 'italic' },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.bgPrimary },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    scroll: { padding: theme.spacing.lg, paddingBottom: theme.spacing.xxl },
+    title: {
+      fontSize: theme.fonts.sizeTitle,
+      ...theme.fonts.extraBold,
+      color: theme.colors.textPrimary,
+      marginBottom: theme.spacing.lg,
+    },
+    // Auth prompt for unauthenticated users
+    authPromptContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: theme.spacing.xl,
+    },
+    authEmoji: { fontSize: 64, marginBottom: theme.spacing.lg },
+    authTitle: {
+      fontSize: 22,
+      ...theme.fonts.bold,
+      color: theme.colors.textPrimary,
+      marginBottom: theme.spacing.sm,
+    },
+    authDesc: {
+      fontSize: theme.fonts.sizeBase,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: theme.spacing.xl,
+    },
+    authButton: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.borderRadius.md,
+      paddingVertical: 14,
+      paddingHorizontal: theme.spacing.xxl,
+    },
+    authButtonText: { color: '#fff', fontSize: 17, ...theme.fonts.bold },
+    // Cards
+    card: {
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.lg,
+      padding: theme.spacing.lg,
+      marginBottom: theme.spacing.md,
+      shadowColor: theme.colors.cardShadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    cardTitle: {
+      fontSize: 18,
+      ...theme.fonts.bold,
+      color: theme.colors.textPrimary,
+      marginBottom: theme.spacing.md,
+    },
+    xpBarBg: {
+      height: 12,
+      backgroundColor: theme.colors.bgPrimary,
+      borderRadius: 6,
+      overflow: 'hidden',
+      marginBottom: theme.spacing.sm,
+    },
+    xpBarFill: {
+      height: '100%',
+      backgroundColor: theme.colors.primary,
+      borderRadius: 6,
+    },
+    xpText: { fontSize: 13, color: theme.colors.textMuted },
+    streakRow: { flexDirection: 'row', alignItems: 'center' },
+    streakEmoji: { fontSize: 36, marginRight: theme.spacing.md },
+    streakCount: { fontSize: 20, ...theme.fonts.bold, color: theme.colors.textPrimary },
+    streakSub: { fontSize: 14, color: theme.colors.textSecondary },
+    badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.md },
+    badge: { alignItems: 'center', width: 70 },
+    badgeIcon: { fontSize: 28, marginBottom: 4 },
+    badgeName: { fontSize: 11, color: theme.colors.textSecondary, textAlign: 'center' },
+    sessionRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: theme.spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.borderLight,
+    },
+    sessionTitle: { fontSize: 15, ...theme.fonts.semiBold, color: theme.colors.textPrimary },
+    sessionDate: { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
+    sessionAccuracy: { fontSize: 20, ...theme.fonts.bold },
+    emptyText: { fontSize: 14, color: theme.colors.textMuted, fontStyle: 'italic' },
+  });

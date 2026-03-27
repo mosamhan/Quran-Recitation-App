@@ -1,30 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
-import { colors, spacing, borderRadius, fonts } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
 const LEVEL_LABELS = { 1: 'Beginner', 2: 'Intermediate', 3: 'Advanced' };
 
 export default function CurriculumScreen() {
   const { user } = useUser();
+  const { theme } = useTheme();
   const [curriculum, setCurriculum] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [loading, setLoading] = useState(true);
 
+  const s = createStyles(theme);
+
   useEffect(() => {
-    if (user?.id) loadCurriculum();
+    loadCurriculum();
   }, [user]);
 
   const loadCurriculum = async () => {
     try {
-      const res = await api.getCurriculum(user.id);
+      const res = await api.getCurriculum(user?.id);
       setCurriculum(res.data);
     } catch {
-      // Silent fail
+      // Silent fail — works without account too
     } finally {
       setLoading(false);
     }
@@ -32,8 +36,8 @@ export default function CurriculumScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={s.centered}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -43,26 +47,26 @@ export default function CurriculumScreen() {
   const lessons = currentLevel?.lessons || [];
 
   const getStatusStyle = (lesson) => {
-    if (lesson.completed) return { bg: colors.success, label: 'Completed', icon: '✓' };
-    if (lesson.unlocked) return { bg: colors.primary, label: 'Available', icon: '▶' };
-    return { bg: colors.textMuted, label: 'Locked', icon: '🔒' };
+    if (lesson.completed) return { bg: theme.colors.success, icon: '✓' };
+    if (lesson.unlocked) return { bg: theme.colors.primary, icon: '▶' };
+    return { bg: theme.colors.textMuted, icon: '🔒' };
   };
 
   const renderLesson = ({ item }) => {
     const status = getStatusStyle(item);
     return (
-      <View style={[styles.lessonCard, !item.unlocked && styles.lessonLocked]}>
-        <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-          <Text style={styles.statusIcon}>{status.icon}</Text>
+      <View style={[s.lessonCard, !item.unlocked && s.lessonLocked]}>
+        <View style={[s.statusBadge, { backgroundColor: status.bg }]}>
+          <Text style={s.statusIcon}>{status.icon}</Text>
         </View>
-        <View style={styles.lessonInfo}>
-          <Text style={[styles.lessonTitle, !item.unlocked && styles.lessonTitleLocked]}>
+        <View style={s.lessonInfo}>
+          <Text style={[s.lessonTitle, !item.unlocked && s.lessonTitleLocked]}>
             {item.title}
           </Text>
-          <Text style={styles.lessonDesc}>{item.description}</Text>
+          <Text style={s.lessonDesc}>{item.description}</Text>
           {item.progress != null && item.progress > 0 && (
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: `${item.progress}%` }]} />
+            <View style={s.progressBarBg}>
+              <View style={[s.progressBarFill, { width: `${item.progress}%` }]} />
             </View>
           )}
         </View>
@@ -71,17 +75,17 @@ export default function CurriculumScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Curriculum</Text>
-        <View style={styles.tabs}>
+    <SafeAreaView style={s.container}>
+      <View style={s.header}>
+        <Text style={s.title}>Learn</Text>
+        <View style={s.tabs}>
           {[1, 2, 3].map((lv) => (
             <TouchableOpacity
               key={lv}
-              style={[styles.tab, selectedLevel === lv && styles.tabActive]}
+              style={[s.tab, selectedLevel === lv && s.tabActive]}
               onPress={() => setSelectedLevel(lv)}
             >
-              <Text style={[styles.tabText, selectedLevel === lv && styles.tabTextActive]}>
+              <Text style={[s.tabText, selectedLevel === lv && s.tabTextActive]}>
                 {LEVEL_LABELS[lv]}
               </Text>
             </TouchableOpacity>
@@ -92,87 +96,88 @@ export default function CurriculumScreen() {
         data={lessons}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderLesson}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={s.list}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No lessons available for this level.</Text>
+          <Text style={s.emptyText}>No lessons available for this level.</Text>
         }
       />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgLight },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { padding: spacing.lg, paddingBottom: 0 },
-  title: {
-    fontSize: 28,
-    ...fonts.extraBold,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.md,
-    padding: 4,
-    marginBottom: spacing.md,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    borderRadius: borderRadius.sm,
-  },
-  tabActive: { backgroundColor: colors.primary },
-  tabText: { fontSize: 14, ...fonts.semiBold, color: colors.textSecondary },
-  tabTextActive: { color: '#fff' },
-  list: { padding: spacing.lg },
-  lessonCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  lessonLocked: { opacity: 0.5 },
-  statusBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  statusIcon: { color: '#fff', fontSize: 16 },
-  lessonInfo: { flex: 1 },
-  lessonTitle: { fontSize: 16, ...fonts.semiBold, color: colors.textPrimary },
-  lessonTitleLocked: { color: colors.textMuted },
-  lessonDesc: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-  progressBarBg: {
-    height: 6,
-    backgroundColor: colors.bgLight,
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginTop: spacing.sm,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: 3,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.xl,
-    fontStyle: 'italic',
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.bgPrimary },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    header: { padding: theme.spacing.lg, paddingBottom: 0 },
+    title: {
+      fontSize: theme.fonts.sizeTitle,
+      ...theme.fonts.extraBold,
+      color: theme.colors.textPrimary,
+      marginBottom: theme.spacing.md,
+    },
+    tabs: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.md,
+      padding: 4,
+      marginBottom: theme.spacing.md,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: theme.spacing.sm,
+      alignItems: 'center',
+      borderRadius: theme.borderRadius.sm,
+    },
+    tabActive: { backgroundColor: theme.colors.primary },
+    tabText: { fontSize: 14, ...theme.fonts.semiBold, color: theme.colors.textSecondary },
+    tabTextActive: { color: '#fff' },
+    list: { padding: theme.spacing.lg },
+    lessonCard: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.md,
+      padding: theme.spacing.md,
+      marginBottom: theme.spacing.md,
+      alignItems: 'center',
+      shadowColor: theme.colors.cardShadow,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    lessonLocked: { opacity: 0.5 },
+    statusBadge: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: theme.spacing.md,
+    },
+    statusIcon: { color: '#fff', fontSize: 16 },
+    lessonInfo: { flex: 1 },
+    lessonTitle: { fontSize: 16, ...theme.fonts.semiBold, color: theme.colors.textPrimary },
+    lessonTitleLocked: { color: theme.colors.textMuted },
+    lessonDesc: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
+    progressBarBg: {
+      height: 6,
+      backgroundColor: theme.colors.bgPrimary,
+      borderRadius: 3,
+      overflow: 'hidden',
+      marginTop: theme.spacing.sm,
+    },
+    progressBarFill: {
+      height: '100%',
+      backgroundColor: theme.colors.primary,
+      borderRadius: 3,
+    },
+    emptyText: {
+      fontSize: 14,
+      color: theme.colors.textMuted,
+      textAlign: 'center',
+      marginTop: theme.spacing.xl,
+      fontStyle: 'italic',
+    },
+  });
