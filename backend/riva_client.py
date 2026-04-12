@@ -222,19 +222,52 @@ class RivaClient:
     
     def _mock_transcribe(self, audio_data: str) -> str:
         """
-        Mock transcription for development/testing
-        Replace this with actual Riva integration
-        
-        NOTE: In development, this returns empty string to simulate
-        real transcription. For testing, you can return expected text.
+        Fallback transcription using OpenAI Whisper for Arabic speech-to-text.
+        Used when Riva is not configured.
         """
-        # For development: return empty to simulate no transcription yet
-        # This allows the system to work but won't give false positives
-        # In production, replace with actual Riva ASR
-        return ""
-        
-        # Alternative for testing: return a partial match to test the system
-        # return "بسم الله"
+        return self._whisper_transcribe(audio_data)
+
+    def _whisper_transcribe(self, audio_data: str) -> str:
+        """Transcribe audio using OpenAI Whisper (local, no API key needed)."""
+        import tempfile
+        import os
+
+        try:
+            import whisper
+        except ImportError:
+            print("Whisper not installed. Run: pip install openai-whisper")
+            return ""
+
+        # Lazy-load model once
+        if not hasattr(self, '_whisper_model') or self._whisper_model is None:
+            print("Loading Whisper model (base) for Arabic transcription...")
+            self._whisper_model = whisper.load_model("base")
+            print("Whisper model loaded.")
+
+        try:
+            # Decode base64 audio to a temp file
+            audio_bytes = base64.b64decode(audio_data)
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                f.write(audio_bytes)
+                tmp_path = f.name
+
+            # Transcribe with Arabic language hint
+            result = self._whisper_model.transcribe(
+                tmp_path,
+                language="ar",
+                task="transcribe",
+            )
+            transcription = result.get("text", "").strip()
+            print(f"Whisper transcription: {transcription}")
+
+            os.unlink(tmp_path)
+            return transcription
+
+        except Exception as e:
+            print(f"Whisper transcription error: {e}")
+            import traceback
+            traceback.print_exc()
+            return ""
     
     def compare_recitation(self, transcribed: str, expected: str) -> List[Dict[str, Any]]:
         """

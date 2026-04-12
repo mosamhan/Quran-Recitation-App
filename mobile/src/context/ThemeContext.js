@@ -4,10 +4,10 @@ import { themes } from '../utils/theme';
 
 const ThemeContext = createContext(null);
 
-const STORAGE_KEY = 'iqra_age_group';
+const STORAGE_KEY = 'iqra_theme_mode';
 
 export const ThemeProvider = ({ children }) => {
-  const [ageGroup, setAgeGroupState] = useState('teen');
+  const [themeMode, setThemeModeState] = useState('light');
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -18,37 +18,40 @@ export const ThemeProvider = ({ children }) => {
     try {
       const saved = await SecureStore.getItemAsync(STORAGE_KEY);
       if (saved && themes[saved]) {
-        setAgeGroupState(saved);
+        setThemeModeState(saved);
       }
     } catch {
-      // Default to teen
+      // Default to light
     } finally {
       setLoaded(true);
     }
   };
 
-  const setAgeGroup = async (group) => {
-    if (!themes[group]) return;
-    setAgeGroupState(group);
+  const setThemeMode = async (mode) => {
+    if (!themes[mode]) return;
+    setThemeModeState(mode);
     try {
-      await SecureStore.setItemAsync(STORAGE_KEY, group);
+      await SecureStore.setItemAsync(STORAGE_KEY, mode);
     } catch {
       // Storage not available
     }
   };
 
-  const theme = themes[ageGroup];
+  const toggleTheme = () => {
+    setThemeMode(themeMode === 'light' ? 'dark' : 'light');
+  };
+
+  const theme = themes[themeMode];
 
   return (
     <ThemeContext.Provider
       value={{
-        ageGroup,
-        setAgeGroup,
+        themeMode,
+        setThemeMode,
+        toggleTheme,
         theme,
         loaded,
-        isChild: ageGroup === 'child',
-        isTeen: ageGroup === 'teen',
-        isAdult: ageGroup === 'adult',
+        isDark: themeMode === 'dark',
       }}
     >
       {children}

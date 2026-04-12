@@ -256,17 +256,19 @@ def start_streaming_analysis():
         print(f"Starting streaming session - user_id: {user_id}, verse_id: {verse_id}")
         print(f"Expected text length: {len(expected_text) if expected_text else 0}")
         
-        if not all([user_id, expected_text]):
+        if user_id is None or not expected_text:
             missing = []
-            if not user_id:
+            if user_id is None:
                 missing.append('user_id')
             if not expected_text:
                 missing.append('expected_text')
             return jsonify({'error': f'Missing required fields: {", ".join(missing)}'}), 400
-        
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'error': f'User {user_id} not found'}), 404
+
+        user = None
+        if user_id:
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({'error': f'User {user_id} not found'}), 404
         
         # Create streaming analyzer
         try:
@@ -338,14 +340,14 @@ def finish_streaming_analysis():
     client_session_id = data.get('client_session_id')
     platform = data.get('platform', 'web')
     
-    if not all([session_key, user_id]):
+    if not session_key or user_id is None:
         return jsonify({'error': 'Missing required fields'}), 400
-    
+
     if session_key not in active_analyzers:
         return jsonify({'error': 'Session not found'}), 404
-    
+
     analyzer = active_analyzers[session_key]
-    user = User.query.get_or_404(user_id)
+    user = User.query.get(user_id) if user_id else None
     
     try:
         print(f"Finishing streaming analysis for session: {session_key}")
@@ -402,45 +404,46 @@ def finish_streaming_analysis():
                     
                     audio_file_path = file_path
         
-        # Create recitation session
-        session = RecitationSession(
-            user_id=user_id,
-            verse_id=verse_id or 'unknown',
-            transcribed_text=final_transcription,
-            expected_text=analyzer.expected_text,
-            accuracy_score=accuracy,
-            session_id=client_session_id,
-            platform=platform,
-            audio_file_path=audio_file_path,
-            audio_duration_ms=audio_metadata.get('duration_ms') if audio_metadata else None,
-            audio_sample_rate=audio_metadata.get('sample_rate') if audio_metadata else None,
-            audio_channels=audio_metadata.get('channels') if audio_metadata else None
-        )
-        db.session.add(session)
-        db.session.flush()
-        
-        # Save mistakes
-        for mistake in mistakes:
-            mistake_record = Mistake(
-                session_id=session.id,
-                mistake_type=mistake.get('type', 'pronunciation'),
-                position=mistake.get('position', 0),
-                incorrect_text=mistake.get('incorrect', ''),
-                correct_text=mistake.get('correct', ''),
-                suggestion=mistake.get('suggestion', '')
+        # Save session to DB only if we have a real user
+        session_id = None
+        gamification_result = None
+        if user_id and user:
+            session = RecitationSession(
+                user_id=user_id,
+                verse_id=verse_id or 'unknown',
+                transcribed_text=final_transcription,
+                expected_text=analyzer.expected_text,
+                accuracy_score=accuracy,
+                session_id=client_session_id,
+                platform=platform,
+                audio_file_path=audio_file_path,
+                audio_duration_ms=audio_metadata.get('duration_ms') if audio_metadata else None,
+                audio_sample_rate=audio_metadata.get('sample_rate') if audio_metadata else None,
+                audio_channels=audio_metadata.get('channels') if audio_metadata else None
             )
-            db.session.add(mistake_record)
-        
-        db.session.commit()
-        
+            db.session.add(session)
+            db.session.flush()
+
+            for mistake in mistakes:
+                mistake_record = Mistake(
+                    session_id=session.id,
+                    mistake_type=mistake.get('type', 'pronunciation'),
+                    position=mistake.get('position', 0),
+                    incorrect_text=mistake.get('incorrect', ''),
+                    correct_text=mistake.get('correct', ''),
+                    suggestion=mistake.get('suggestion', '')
+                )
+                db.session.add(mistake_record)
+
+            db.session.commit()
+            session_id = session.id
+            gamification_result = record_practice(user_id, accuracy)
+
         # Clean up analyzer
         del active_analyzers[session_key]
 
-        # Record gamification (XP, streaks, badges)
-        gamification_result = record_practice(user_id, accuracy)
-
         return jsonify({
-            'session_id': session.id,
+            'session_id': session_id,
             'transcription': final_transcription,
             'expected_text': analyzer.expected_text,
             'accuracy': accuracy,
@@ -653,7 +656,6 @@ def get_chapter_audio(chapter_number):
         # If absolute verse number is provided, use it directly
         if absolute_verse_number:
             # Use the mapping from quran_api.py which handles fallbacks
-            from quran_api import QuranAPIService
             audio_url = QuranAPIService.get_audio_url(chapter_number, verse_number, reciter)
             
             if not audio_url:
@@ -1023,5 +1025,6 @@ def dataset_statistics():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 8000))
+    app.run(debug=True, port=port)
 

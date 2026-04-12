@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import TopNav from '../components/TopNav';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
@@ -76,9 +77,9 @@ export default function CurriculumScreen() {
   };
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={s.container} edges={['top']}>
+      <TopNav />
       <View style={s.header}>
-        <Text style={s.title}>Learn</Text>
         <View style={s.tabs}>
           {[1, 2, 3].map((lv) => (
             <TouchableOpacity
@@ -112,12 +113,6 @@ const createStyles = (theme) =>
     container: { flex: 1, backgroundColor: theme.colors.bgPrimary },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     header: { padding: theme.spacing.lg, paddingBottom: 0 },
-    title: {
-      fontSize: theme.fonts.sizeTitle,
-      ...theme.fonts.extraBold,
-      color: theme.colors.textPrimary,
-      marginBottom: theme.spacing.md,
-    },
     tabs: {
       flexDirection: 'row',
       backgroundColor: theme.colors.bgCard,
