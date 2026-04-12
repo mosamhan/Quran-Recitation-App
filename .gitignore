@@ -46,6 +46,10 @@ Thumbs.db
 dist/
 build/
 
+# Expo / React Native
+.expo/
+*.xcode.env
+
 # Large ML model files
 *.nemo
 *.onnx

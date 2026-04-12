@@ -6,27 +6,27 @@ import os
 from datetime import datetime
 
 from models import db, User, RecitationSession, Mistake, Progress
-from demographic_model import DemographicInformation
-from auth import generate_token, login_required
-from riva_client import RivaClient
-from verses import get_all_verses, get_verse
-from quran_api import QuranAPIService
-from streaming_analyzer import StreamingAnalyzer
-from audio_validator import AudioValidator
-from tajweed_rules import detect_tajweed_rules, get_all_rules as get_all_tajweed_rules
-from gamification import (
+from ml.demographic_model import DemographicInformation
+from api.auth import generate_token, login_required
+from services.riva_client import RivaClient
+from data.verses import get_all_verses, get_verse
+from api.quran_api import QuranAPIService
+from services.streaming_analyzer import StreamingAnalyzer
+from services.audio_validator import AudioValidator
+from services.tajweed_rules import detect_tajweed_rules, get_all_rules as get_all_tajweed_rules
+from services.gamification import (
     get_gamification_stats, record_practice, get_or_create_streak,
     UserStreak, UserBadge
 )
-from curriculum import (
+from services.curriculum import (
     get_curriculum, get_lesson, get_lessons_for_level, compute_user_progress
 )
 
 # Optional imports for annotation system (only import if needed)
 try:
-    from annotation_model import Annotator, Annotation, AnnotationBatch
-    from annotation_service import AnnotationService
-    from data_preprocessing import DataPreprocessor
+    from ml.annotation_model import Annotator, Annotation, AnnotationBatch
+    from ml.annotation_service import AnnotationService
+    from ml.data_preprocessing import DataPreprocessor
     ANNOTATION_SYSTEM_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Annotation system not available: {e}")
