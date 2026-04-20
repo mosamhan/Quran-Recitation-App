@@ -55,6 +55,11 @@ const apiService = {
   analyzeChunk: (data) => api.post('/recitation/analyze-chunk', data),
   finishStreamingAnalysis: (data) => api.post('/recitation/finish-streaming', data),
 
+  // Free recitation (auto-detect position & verse-by-verse following)
+  startFreeRecitation: (data) => api.post('/recitation/start-free', data),
+  sendFreeChunk: (data) => api.post('/recitation/free-chunk', data),
+  finishFreeRecitation: (data) => api.post('/recitation/finish-free', data),
+
   // Progress
   getProgress: (userId) => api.get(`/progress/${userId}`),
   markMemorized: (userId, verseId) =>

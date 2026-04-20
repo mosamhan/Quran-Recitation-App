@@ -68,6 +68,7 @@ export default function ChapterDetailScreen({ route, navigation }) {
   const [selectedVerse, setSelectedVerse] = useState(null);
   const [fabMode, setFabMode] = useState('listen');
   const [showRecitationOverlay, setShowRecitationOverlay] = useState(false);
+  const [recitationMode, setRecitationMode] = useState('verse'); // 'verse' or 'free'
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const playbackSpeedRef = useRef(1);
   const [currentMushafPage, setCurrentMushafPage] = useState(null);
@@ -462,6 +463,12 @@ export default function ChapterDetailScreen({ route, navigation }) {
     if (showRecitationOverlay) {
       setShowRecitationOverlay(false);
     } else {
+      // If a verse is selected, use verse mode; otherwise free mode
+      if (selectedVerse) {
+        setRecitationMode('verse');
+      } else {
+        setRecitationMode('free');
+      }
       const verse = selectedVerse || 1;
       setSelectedVerse(verse);
       setShowRecitationOverlay(true);
@@ -867,6 +874,7 @@ export default function ChapterDetailScreen({ route, navigation }) {
 
       {/* Recitation overlay */}
       <RecitationOverlay
+        mode={recitationMode}
         visible={showRecitationOverlay}
         verseText={getSelectedVerseText()}
         chapterNumber={chapterNumber}

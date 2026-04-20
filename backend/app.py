@@ -12,6 +12,7 @@ from services.riva_client import RivaClient
 from data.verses import get_all_verses, get_verse
 from api.quran_api import QuranAPIService
 from services.streaming_analyzer import StreamingAnalyzer
+from services.free_recitation import FreeRecitationSession
 from services.audio_validator import AudioValidator
 from services.tajweed_rules import detect_tajweed_rules, get_all_rules as get_all_tajweed_rules
 from services.gamification import (
@@ -240,6 +241,7 @@ def user_demographic(user_id):
 
 # Store active streaming analyzers per user
 active_analyzers = {}
+active_free_sessions = {}
 
 @app.route('/api/recitation/start-streaming', methods=['POST'])
 def start_streaming_analysis():
@@ -457,6 +459,79 @@ def finish_streaming_analysis():
         if session_key in active_analyzers:
             del active_analyzers[session_key]
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recitation/start-free', methods=['POST'])
+def start_free_recitation():
+    """Start a free recitation session with auto verse detection"""
+    try:
+        data = request.json or {}
+        user_id = data.get('user_id')
+
+        session = FreeRecitationSession(riva_client)
+        session_key = f"free_{user_id}_{datetime.utcnow().timestamp()}"
+        active_free_sessions[session_key] = session
+
+        return jsonify({
+            'session_key': session_key,
+            'status': 'started',
+            'state': 'detecting',
+        }), 200
+    except Exception as e:
+        print(f"Error in start_free_recitation: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/recitation/free-chunk', methods=['POST'])
+def free_chunk():
+    """Send an audio chunk during a free recitation session"""
+    try:
+        data = request.json
+        session_key = data.get('session_key')
+        audio_chunk = data.get('audio_chunk')
+
+        if not session_key or not audio_chunk:
+            return jsonify({'error': 'Missing session_key or audio_chunk'}), 400
+
+        if session_key not in active_free_sessions:
+            return jsonify({'error': 'Session not found'}), 404
+
+        session = active_free_sessions[session_key]
+        result = session.process_chunk(audio_chunk)
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"Error in free_chunk: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/recitation/finish-free', methods=['POST'])
+def finish_free_recitation():
+    """Finish a free recitation session and get results"""
+    try:
+        data = request.json or {}
+        session_key = data.get('session_key')
+
+        if not session_key or session_key not in active_free_sessions:
+            return jsonify({'error': 'Session not found'}), 404
+
+        session = active_free_sessions[session_key]
+        result = session.finish()
+        del active_free_sessions[session_key]
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"Error in finish_free_recitation: {e}")
+        if session_key and session_key in active_free_sessions:
+            del active_free_sessions[session_key]
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/recitation/analyze', methods=['POST'])
 def analyze_recitation():
