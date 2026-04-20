@@ -11,7 +11,6 @@ export default function RegisterScreen({ navigation }) {
   const { theme } = useTheme();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +27,7 @@ export default function RegisterScreen({ navigation }) {
         username,
         email,
         password,
-        display_name: displayName || username,
+        display_name: username,
       });
       navigation.replace('Onboarding');
     } catch (err) {
@@ -69,13 +68,6 @@ export default function RegisterScreen({ navigation }) {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-          />
-          <TextInput
-            style={s.input}
-            placeholder="Display Name"
-            placeholderTextColor={theme.colors.textMuted}
-            value={displayName}
-            onChangeText={setDisplayName}
           />
           <TextInput
             style={s.input}

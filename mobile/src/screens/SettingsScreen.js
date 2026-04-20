@@ -1,210 +1,97 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Alert, ScrollView, Switch,
+  ScrollView, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useUser } from '../context/UserContext';
+import TopNav from '../components/TopNav';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 
-const AGE_THEMES = [
-  { key: 'child', label: 'Child', ages: '5-12', icon: 'sparkles-outline', preview: '#FF6B9D' },
-  { key: 'teen', label: 'Teen', ages: '13-17', icon: 'rocket-outline', preview: '#667eea' },
-  { key: 'adult', label: 'Adult', ages: '18+', icon: 'library-outline', preview: '#2c3e50' },
-];
-
-const TRANSLATIONS = [
-  { key: 'en', label: 'English' },
-  { key: 'ur', label: 'Urdu' },
-  { key: 'fr', label: 'French' },
-  { key: 'tr', label: 'Turkish' },
-  { key: 'id', label: 'Indonesian' },
-];
-
-const MUSHAF_LAYOUTS = [
-  { key: 'page', label: 'Page View', desc: 'Traditional mushaf layout' },
-  { key: 'scroll', label: 'Scroll View', desc: 'Continuous scrolling' },
-  { key: 'verse', label: 'Verse by Verse', desc: 'One verse at a time' },
-];
-
-export default function SettingsScreen({ navigation }) {
-  const { user, logout, isAuthenticated } = useUser();
-  const { theme, ageGroup, setAgeGroup } = useTheme();
-  const [selectedTranslation, setSelectedTranslation] = useState('en');
-  const [selectedLayout, setSelectedLayout] = useState('scroll');
-  const [showTranslation, setShowTranslation] = useState(true);
+export default function SettingsScreen() {
+  const { theme, themeMode, setThemeMode } = useTheme();
+  const {
+    gamificationEnabled,
+    tajweedEnabled,
+    updateSettings,
+  } = useSettings();
 
   const s = createStyles(theme);
 
-  const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: () => logout(),
-      },
-    ]);
-  };
-
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={s.container} edges={['top']}>
+      <TopNav />
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={s.title}>Settings</Text>
 
-        {/* ──── Account Section ──── */}
-        <Text style={s.sectionTitle}>Account</Text>
-        {isAuthenticated ? (
-          <View style={s.card}>
-            <View style={s.profileRow}>
-              <View style={s.avatar}>
-                <Text style={s.avatarText}>
-                  {(user?.display_name || user?.username || '?')[0].toUpperCase()}
-                </Text>
-              </View>
-              <View style={s.profileInfo}>
-                <Text style={s.profileName}>{user?.display_name || user?.username}</Text>
-                <Text style={s.profileEmail}>{user?.email}</Text>
-              </View>
-            </View>
-            <View style={s.divider} />
-            <View style={s.row}>
-              <Text style={s.label}>Username</Text>
-              <Text style={s.value}>{user?.username}</Text>
-            </View>
-            <View style={s.row}>
-              <Text style={s.label}>Experience</Text>
-              <Text style={s.value}>{user?.experience_level || 'Not set'}</Text>
-            </View>
-            <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-              <Text style={s.logoutText}>Log Out</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={s.card}>
-            <Text style={s.authPrompt}>
-              Sign in to save your progress across devices and unlock all features.
-            </Text>
-            <View style={s.authButtons}>
-              <TouchableOpacity
-                style={s.signInBtn}
-                onPress={() => navigation.navigate('Login')}
-              >
-                <Text style={s.signInText}>Sign In</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={s.createBtn}
-                onPress={() => navigation.navigate('Register')}
-              >
-                <Text style={s.createText}>Create Account</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* ──── Theme Section ──── */}
+        {/* Theme Section */}
         <Text style={s.sectionTitle}>Theme</Text>
         <View style={s.card}>
-          <Text style={s.cardDesc}>Choose a visual style suited to your age group</Text>
-          <View style={s.themeGrid}>
-            {AGE_THEMES.map((t) => (
-              <TouchableOpacity
-                key={t.key}
-                style={[
-                  s.themeCard,
-                  ageGroup === t.key && { borderColor: t.preview },
-                ]}
-                onPress={() => setAgeGroup(t.key)}
-              >
-                <View style={[s.themePreview, { backgroundColor: t.preview }]} />
-                <Ionicons name={t.icon} size={26} color={ageGroup === t.key ? t.preview : theme.colors.textSecondary} />
-                <Text style={[
-                  s.themeLabel,
-                  ageGroup === t.key && { color: t.preview },
-                ]}>
-                  {t.label}
-                </Text>
-                <Text style={s.themeAges}>{t.ages}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={s.themeRow}>
+            <TouchableOpacity
+              style={[s.themeOption, themeMode === 'light' && s.themeOptionSelected]}
+              onPress={() => setThemeMode('light')}
+            >
+              <Ionicons
+                name="sunny-outline"
+                size={26}
+                color={themeMode === 'light' ? theme.colors.primary : theme.colors.textMuted}
+              />
+              <Text style={[s.themeLabel, themeMode === 'light' && s.themeLabelSelected]}>
+                Light
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.themeOption, themeMode === 'dark' && s.themeOptionSelected]}
+              onPress={() => setThemeMode('dark')}
+            >
+              <Ionicons
+                name="moon-outline"
+                size={26}
+                color={themeMode === 'dark' ? theme.colors.primary : theme.colors.textMuted}
+              />
+              <Text style={[s.themeLabel, themeMode === 'dark' && s.themeLabelSelected]}>
+                Dark
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* ──── Mushaf Layout Section ──── */}
-        <Text style={s.sectionTitle}>Mushaf Layout</Text>
-        <View style={s.card}>
-          {MUSHAF_LAYOUTS.map((layout) => (
-            <TouchableOpacity
-              key={layout.key}
-              style={[
-                s.optionRow,
-                selectedLayout === layout.key && s.optionRowSelected,
-              ]}
-              onPress={() => setSelectedLayout(layout.key)}
-            >
-              <View style={s.optionInfo}>
-                <Text style={[
-                  s.optionLabel,
-                  selectedLayout === layout.key && s.optionLabelSelected,
-                ]}>
-                  {layout.label}
-                </Text>
-                <Text style={s.optionDesc}>{layout.desc}</Text>
-              </View>
-              {selectedLayout === layout.key && (
-                <Text style={s.checkmark}>✓</Text>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* ──── Translation Section ──── */}
-        <Text style={s.sectionTitle}>Translation</Text>
+        {/* Experience Section */}
+        <Text style={s.sectionTitle}>Experience</Text>
         <View style={s.card}>
           <View style={s.switchRow}>
-            <Text style={s.switchLabel}>Show Translation</Text>
+            <View style={s.switchInfo}>
+              <Text style={s.switchLabel}>Gamification</Text>
+              <Text style={s.switchDesc}>XP, levels, streaks, and progress tracking</Text>
+            </View>
             <Switch
-              value={showTranslation}
-              onValueChange={setShowTranslation}
+              value={gamificationEnabled}
+              onValueChange={(val) => updateSettings({ gamificationEnabled: val })}
               trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
               thumbColor="#fff"
             />
           </View>
-          {showTranslation && (
-            <View style={s.translationList}>
-              {TRANSLATIONS.map((t) => (
-                <TouchableOpacity
-                  key={t.key}
-                  style={[
-                    s.translationChip,
-                    selectedTranslation === t.key && s.translationChipSelected,
-                  ]}
-                  onPress={() => setSelectedTranslation(t.key)}
-                >
-                  <Text style={[
-                    s.translationChipText,
-                    selectedTranslation === t.key && s.translationChipTextSelected,
-                  ]}>
-                    {t.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          <View style={s.divider} />
+          <View style={s.switchRow}>
+            <View style={s.switchInfo}>
+              <Text style={s.switchLabel}>Tajweed Coloring</Text>
+              <Text style={s.switchDesc}>Color-coded tajweed rules on Arabic text</Text>
             </View>
-          )}
+            <Switch
+              value={tajweedEnabled}
+              onValueChange={(val) => updateSettings({ tajweedEnabled: val })}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
         </View>
 
-        {/* ──── About Section ──── */}
-        <Text style={s.sectionTitle}>About</Text>
-        <View style={s.card}>
-          <View style={s.row}>
-            <Text style={s.label}>App Version</Text>
-            <Text style={s.value}>1.0.0</Text>
-          </View>
-          <View style={s.rowLast}>
-            <Text style={s.label}>Built with</Text>
-            <Text style={s.value}>React Native + Expo</Text>
-          </View>
+        <View style={s.note}>
+          <Ionicons name="information-circle-outline" size={16} color={theme.colors.textMuted} />
+          <Text style={s.noteText}>
+            Mushaf layout, translation, and font settings are available within the Quran reader via the settings icon.
+          </Text>
         </View>
 
         <View style={{ height: theme.spacing.xxl }} />
@@ -217,12 +104,6 @@ const createStyles = (theme) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.colors.bgPrimary },
     scroll: { padding: theme.spacing.lg },
-    title: {
-      fontSize: theme.fonts.sizeTitle,
-      ...theme.fonts.extraBold,
-      color: theme.colors.textPrimary,
-      marginBottom: theme.spacing.lg,
-    },
     sectionTitle: {
       fontSize: theme.fonts.sizeLarge,
       ...theme.fonts.bold,
@@ -241,135 +122,55 @@ const createStyles = (theme) =>
       shadowRadius: 8,
       elevation: 2,
     },
-    cardDesc: {
-      fontSize: theme.fonts.sizeSmall,
-      color: theme.colors.textSecondary,
-      marginBottom: theme.spacing.md,
-    },
-    // Account
-    profileRow: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.md },
-    avatar: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      backgroundColor: theme.colors.primary,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: theme.spacing.md,
-    },
-    avatarText: { color: '#fff', fontSize: 22, ...theme.fonts.bold },
-    profileInfo: { flex: 1 },
-    profileName: { fontSize: 18, ...theme.fonts.bold, color: theme.colors.textPrimary },
-    profileEmail: { fontSize: 14, color: theme.colors.textSecondary },
-    divider: {
-      height: 1,
-      backgroundColor: theme.colors.borderLight,
-      marginBottom: theme.spacing.sm,
-    },
-    row: {
+    themeRow: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingVertical: theme.spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.borderLight,
+      gap: theme.spacing.sm,
     },
-    rowLast: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingVertical: theme.spacing.sm,
-    },
-    label: { fontSize: 15, color: theme.colors.textSecondary },
-    value: { fontSize: 15, ...theme.fonts.semiBold, color: theme.colors.textPrimary },
-    logoutBtn: {
-      marginTop: theme.spacing.md,
-      padding: 14,
-      borderRadius: theme.borderRadius.md,
-      backgroundColor: 'rgba(231,76,60,0.1)',
-      alignItems: 'center',
-    },
-    logoutText: { color: theme.colors.danger, fontSize: 16, ...theme.fonts.bold },
-    authPrompt: {
-      fontSize: theme.fonts.sizeBase,
-      color: theme.colors.textSecondary,
-      marginBottom: theme.spacing.md,
-      lineHeight: 22,
-    },
-    authButtons: { flexDirection: 'row', gap: theme.spacing.sm },
-    signInBtn: {
-      flex: 1,
-      padding: 14,
-      borderRadius: theme.borderRadius.md,
-      backgroundColor: theme.colors.primary,
-      alignItems: 'center',
-    },
-    signInText: { color: '#fff', fontSize: 16, ...theme.fonts.bold },
-    createBtn: {
-      flex: 1,
-      padding: 14,
-      borderRadius: theme.borderRadius.md,
-      borderWidth: 1.5,
-      borderColor: theme.colors.primary,
-      alignItems: 'center',
-    },
-    createText: { color: theme.colors.primary, fontSize: 16, ...theme.fonts.bold },
-    // Theme picker
-    themeGrid: { flexDirection: 'row', gap: theme.spacing.sm },
-    themeCard: {
+    themeOption: {
       flex: 1,
       alignItems: 'center',
-      padding: theme.spacing.md,
+      padding: theme.spacing.lg,
       borderRadius: theme.borderRadius.md,
       borderWidth: 2,
       borderColor: 'transparent',
       backgroundColor: theme.colors.bgPrimary,
     },
-    themePreview: {
-      width: '100%',
-      height: 6,
-      borderRadius: 3,
-      marginBottom: theme.spacing.sm,
+    themeOptionSelected: {
+      borderColor: theme.colors.primary,
     },
-    themeEmoji: { fontSize: 28, marginBottom: 4 },
-    themeLabel: { fontSize: 14, ...theme.fonts.bold, color: theme.colors.textPrimary },
-    themeAges: { fontSize: 11, color: theme.colors.textMuted },
-    // Mushaf layout
-    optionRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: theme.spacing.sm,
-      borderRadius: theme.borderRadius.sm,
-      marginBottom: 4,
+    themeLabel: {
+      fontSize: 15,
+      ...theme.fonts.bold,
+      color: theme.colors.textMuted,
+      marginTop: theme.spacing.sm,
     },
-    optionRowSelected: { backgroundColor: theme.colors.bgPrimary },
-    optionInfo: { flex: 1 },
-    optionLabel: { fontSize: 15, ...theme.fonts.semiBold, color: theme.colors.textPrimary },
-    optionLabelSelected: { color: theme.colors.primary },
-    optionDesc: { fontSize: 12, color: theme.colors.textMuted },
-    checkmark: { fontSize: 18, color: theme.colors.primary, ...theme.fonts.bold },
-    // Translation
+    themeLabelSelected: {
+      color: theme.colors.primary,
+    },
     switchRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: theme.spacing.md,
     },
+    switchInfo: { flex: 1, marginRight: theme.spacing.md },
     switchLabel: { fontSize: 15, ...theme.fonts.semiBold, color: theme.colors.textPrimary },
-    translationList: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
-    translationChip: {
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-      borderRadius: theme.borderRadius.round,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
+    switchDesc: { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
+    divider: {
+      height: 1,
+      backgroundColor: theme.colors.borderLight,
+      marginVertical: theme.spacing.md,
     },
-    translationChipSelected: {
-      backgroundColor: theme.colors.primary,
-      borderColor: theme.colors.primary,
+    note: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+      marginTop: theme.spacing.lg,
+      paddingHorizontal: theme.spacing.sm,
     },
-    translationChipText: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      ...theme.fonts.semiBold,
+    noteText: {
+      flex: 1,
+      fontSize: 13,
+      color: theme.colors.textMuted,
+      lineHeight: 18,
     },
-    translationChipTextSelected: { color: '#fff' },
   });

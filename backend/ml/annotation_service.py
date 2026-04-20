@@ -7,7 +7,7 @@ import os
 from typing import List, Dict, Any
 from datetime import datetime
 from models import db, RecitationSession
-from annotation_model import Annotation, Annotator, AnnotationBatch
+from ml.annotation_model import Annotation, Annotator, AnnotationBatch
 
 class AnnotationService:
     """Service for managing annotation workflow and data export"""

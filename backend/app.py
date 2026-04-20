@@ -6,27 +6,28 @@ import os
 from datetime import datetime
 
 from models import db, User, RecitationSession, Mistake, Progress
-from demographic_model import DemographicInformation
-from auth import generate_token, login_required
-from riva_client import RivaClient
-from verses import get_all_verses, get_verse
-from quran_api import QuranAPIService
-from streaming_analyzer import StreamingAnalyzer
-from audio_validator import AudioValidator
-from tajweed_rules import detect_tajweed_rules, get_all_rules as get_all_tajweed_rules
-from gamification import (
+from ml.demographic_model import DemographicInformation
+from api.auth import generate_token, login_required
+from services.riva_client import RivaClient
+from data.verses import get_all_verses, get_verse
+from api.quran_api import QuranAPIService
+from services.streaming_analyzer import StreamingAnalyzer
+from services.free_recitation import FreeRecitationSession
+from services.audio_validator import AudioValidator
+from services.tajweed_rules import detect_tajweed_rules, get_all_rules as get_all_tajweed_rules
+from services.gamification import (
     get_gamification_stats, record_practice, get_or_create_streak,
     UserStreak, UserBadge
 )
-from curriculum import (
+from services.curriculum import (
     get_curriculum, get_lesson, get_lessons_for_level, compute_user_progress
 )
 
 # Optional imports for annotation system (only import if needed)
 try:
-    from annotation_model import Annotator, Annotation, AnnotationBatch
-    from annotation_service import AnnotationService
-    from data_preprocessing import DataPreprocessor
+    from ml.annotation_model import Annotator, Annotation, AnnotationBatch
+    from ml.annotation_service import AnnotationService
+    from ml.data_preprocessing import DataPreprocessor
     ANNOTATION_SYSTEM_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Annotation system not available: {e}")
@@ -240,6 +241,7 @@ def user_demographic(user_id):
 
 # Store active streaming analyzers per user
 active_analyzers = {}
+active_free_sessions = {}
 
 @app.route('/api/recitation/start-streaming', methods=['POST'])
 def start_streaming_analysis():
@@ -256,17 +258,19 @@ def start_streaming_analysis():
         print(f"Starting streaming session - user_id: {user_id}, verse_id: {verse_id}")
         print(f"Expected text length: {len(expected_text) if expected_text else 0}")
         
-        if not all([user_id, expected_text]):
+        if user_id is None or not expected_text:
             missing = []
-            if not user_id:
+            if user_id is None:
                 missing.append('user_id')
             if not expected_text:
                 missing.append('expected_text')
             return jsonify({'error': f'Missing required fields: {", ".join(missing)}'}), 400
-        
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'error': f'User {user_id} not found'}), 404
+
+        user = None
+        if user_id:
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({'error': f'User {user_id} not found'}), 404
         
         # Create streaming analyzer
         try:
@@ -338,14 +342,14 @@ def finish_streaming_analysis():
     client_session_id = data.get('client_session_id')
     platform = data.get('platform', 'web')
     
-    if not all([session_key, user_id]):
+    if not session_key or user_id is None:
         return jsonify({'error': 'Missing required fields'}), 400
-    
+
     if session_key not in active_analyzers:
         return jsonify({'error': 'Session not found'}), 404
-    
+
     analyzer = active_analyzers[session_key]
-    user = User.query.get_or_404(user_id)
+    user = User.query.get(user_id) if user_id else None
     
     try:
         print(f"Finishing streaming analysis for session: {session_key}")
@@ -402,45 +406,46 @@ def finish_streaming_analysis():
                     
                     audio_file_path = file_path
         
-        # Create recitation session
-        session = RecitationSession(
-            user_id=user_id,
-            verse_id=verse_id or 'unknown',
-            transcribed_text=final_transcription,
-            expected_text=analyzer.expected_text,
-            accuracy_score=accuracy,
-            session_id=client_session_id,
-            platform=platform,
-            audio_file_path=audio_file_path,
-            audio_duration_ms=audio_metadata.get('duration_ms') if audio_metadata else None,
-            audio_sample_rate=audio_metadata.get('sample_rate') if audio_metadata else None,
-            audio_channels=audio_metadata.get('channels') if audio_metadata else None
-        )
-        db.session.add(session)
-        db.session.flush()
-        
-        # Save mistakes
-        for mistake in mistakes:
-            mistake_record = Mistake(
-                session_id=session.id,
-                mistake_type=mistake.get('type', 'pronunciation'),
-                position=mistake.get('position', 0),
-                incorrect_text=mistake.get('incorrect', ''),
-                correct_text=mistake.get('correct', ''),
-                suggestion=mistake.get('suggestion', '')
+        # Save session to DB only if we have a real user
+        session_id = None
+        gamification_result = None
+        if user_id and user:
+            session = RecitationSession(
+                user_id=user_id,
+                verse_id=verse_id or 'unknown',
+                transcribed_text=final_transcription,
+                expected_text=analyzer.expected_text,
+                accuracy_score=accuracy,
+                session_id=client_session_id,
+                platform=platform,
+                audio_file_path=audio_file_path,
+                audio_duration_ms=audio_metadata.get('duration_ms') if audio_metadata else None,
+                audio_sample_rate=audio_metadata.get('sample_rate') if audio_metadata else None,
+                audio_channels=audio_metadata.get('channels') if audio_metadata else None
             )
-            db.session.add(mistake_record)
-        
-        db.session.commit()
-        
+            db.session.add(session)
+            db.session.flush()
+
+            for mistake in mistakes:
+                mistake_record = Mistake(
+                    session_id=session.id,
+                    mistake_type=mistake.get('type', 'pronunciation'),
+                    position=mistake.get('position', 0),
+                    incorrect_text=mistake.get('incorrect', ''),
+                    correct_text=mistake.get('correct', ''),
+                    suggestion=mistake.get('suggestion', '')
+                )
+                db.session.add(mistake_record)
+
+            db.session.commit()
+            session_id = session.id
+            gamification_result = record_practice(user_id, accuracy)
+
         # Clean up analyzer
         del active_analyzers[session_key]
 
-        # Record gamification (XP, streaks, badges)
-        gamification_result = record_practice(user_id, accuracy)
-
         return jsonify({
-            'session_id': session.id,
+            'session_id': session_id,
             'transcription': final_transcription,
             'expected_text': analyzer.expected_text,
             'accuracy': accuracy,
@@ -454,6 +459,79 @@ def finish_streaming_analysis():
         if session_key in active_analyzers:
             del active_analyzers[session_key]
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recitation/start-free', methods=['POST'])
+def start_free_recitation():
+    """Start a free recitation session with auto verse detection"""
+    try:
+        data = request.json or {}
+        user_id = data.get('user_id')
+
+        session = FreeRecitationSession(riva_client)
+        session_key = f"free_{user_id}_{datetime.utcnow().timestamp()}"
+        active_free_sessions[session_key] = session
+
+        return jsonify({
+            'session_key': session_key,
+            'status': 'started',
+            'state': 'detecting',
+        }), 200
+    except Exception as e:
+        print(f"Error in start_free_recitation: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/recitation/free-chunk', methods=['POST'])
+def free_chunk():
+    """Send an audio chunk during a free recitation session"""
+    try:
+        data = request.json
+        session_key = data.get('session_key')
+        audio_chunk = data.get('audio_chunk')
+
+        if not session_key or not audio_chunk:
+            return jsonify({'error': 'Missing session_key or audio_chunk'}), 400
+
+        if session_key not in active_free_sessions:
+            return jsonify({'error': 'Session not found'}), 404
+
+        session = active_free_sessions[session_key]
+        result = session.process_chunk(audio_chunk)
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"Error in free_chunk: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/recitation/finish-free', methods=['POST'])
+def finish_free_recitation():
+    """Finish a free recitation session and get results"""
+    try:
+        data = request.json or {}
+        session_key = data.get('session_key')
+
+        if not session_key or session_key not in active_free_sessions:
+            return jsonify({'error': 'Session not found'}), 404
+
+        session = active_free_sessions[session_key]
+        result = session.finish()
+        del active_free_sessions[session_key]
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"Error in finish_free_recitation: {e}")
+        if session_key and session_key in active_free_sessions:
+            del active_free_sessions[session_key]
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/recitation/analyze', methods=['POST'])
 def analyze_recitation():
@@ -653,7 +731,6 @@ def get_chapter_audio(chapter_number):
         # If absolute verse number is provided, use it directly
         if absolute_verse_number:
             # Use the mapping from quran_api.py which handles fallbacks
-            from quran_api import QuranAPIService
             audio_url = QuranAPIService.get_audio_url(chapter_number, verse_number, reciter)
             
             if not audio_url:
@@ -1023,5 +1100,6 @@ def dataset_statistics():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 8000))
+    app.run(debug=True, port=port)
 

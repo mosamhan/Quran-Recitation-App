@@ -1,57 +1,77 @@
 # IQRA - Quran Recitation Learning App
 
-## Overview
-
-A mobile application built with React Native (Expo) to help users learn and improve their Quranic recitation using AI-powered Arabic speech recognition (NVIDIA Riva ASR). Features age-adaptive themes, structured curriculum, and progress tracking.
-
-## Features
-
-- Browse all 114 chapters of the Quran
-- Listen to recitations from verified reciters
-- Practice recitation with real-time pronunciation feedback
-- Track progress and accuracy over time
-- Age-adaptive UI themes (kids, teens, adults)
-- Structured curriculum with guided learning paths
-- Tajweed rule highlighting and feedback
+A mobile application built with React Native (Expo) to help users learn and improve their Quranic recitation using AI-powered Arabic speech recognition. Features Mushaf layout, tajweed color-coding, word-by-word audio tracking, and structured curriculum.
 
 ## Project Structure
 
 ```
-Quran Recitation Project/
-├── backend/                          # Flask API server
-│   ├── app.py                       # Main application
-│   ├── riva_client.py               # NVIDIA Riva ASR client
-│   ├── quran_api.py                 # Al-Quran Cloud API integration
-│   ├── streaming_analyzer.py        # Real-time analysis
-│   ├── models.py                    # Database models
-│   ├── requirements.txt             # Python dependencies
-│   └── RIVA_ARABIC_SETUP.md        # Riva setup guide
+├── backend/                     # Flask API server
+│   ├── app.py                   # Application entry point
+│   ├── models.py                # Database models
+│   ├── requirements.txt
+│   ├── env.example
+│   ├── api/                     # External API integrations
+│   │   ├── quran_api.py         # Al-Quran Cloud API
+│   │   └── auth.py              # JWT authentication
+│   ├── services/                # Business logic
+│   │   ├── riva_client.py       # NVIDIA Riva / Whisper ASR
+│   │   ├── streaming_analyzer.py
+│   │   ├── audio_validator.py
+│   │   ├── gamification.py      # XP, streaks, badges
+│   │   ├── curriculum.py        # Learning paths
+│   │   └── tajweed_rules.py     # Tajweed detection
+│   ├── ml/                      # ML / annotation pipeline
+│   │   ├── annotation_model.py
+│   │   ├── annotation_service.py
+│   │   ├── data_preprocessing.py
+│   │   └── demographic_model.py
+│   ├── data/
+│   │   └── verses.py
+│   ├── scripts/
+│   │   ├── init_db.py
+│   │   └── migrate_db.py
+│   ├── tests/
+│   │   └── test_reciters.py
+│   └── docs/
+│       ├── RIVA_SETUP.md
+│       └── RIVA_ARABIC_SETUP.md
 │
-├── mobile/                           # React Native (Expo) app
-│   ├── App.js                       # Root component & navigation
+├── mobile/                      # React Native (Expo) app
+│   ├── App.js                   # Root component & navigation
 │   ├── src/
-│   │   ├── screens/                 # App screens
-│   │   ├── context/                 # React contexts (theme, user)
-│   │   ├── services/                # API client
-│   │   └── utils/                   # Theme & helpers
+│   │   ├── screens/             # App screens
+│   │   ├── components/          # Reusable UI components
+│   │   ├── context/             # React contexts
+│   │   ├── services/            # API client
+│   │   ├── data/                # Static data (Quran metadata)
+│   │   └── utils/               # Theme & helpers
 │   └── package.json
+│
+├── docs/                        # Project documentation
+│   ├── SETUP.md
+│   ├── PROJECT_SUMMARY.md
+│   ├── QURAN_API_INTEGRATION.md
+│   ├── ANNOTATION_SYSTEM.md
+│   ├── IMPROVEMENTS_FROM_TARTEEL.md
+│   └── RESUME_DESCRIPTION.md
 │
 └── README.md
 ```
 
-## Quick Setup
+## Quick Start
 
-### 1. Backend
+### Backend
 
 ```bash
 cd backend
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-cp env.example .env   # edit with your config
-python -c "from app import app, db; app.app_context().push(); db.create_all()"
-python app.py          # runs on http://localhost:5000
+cp env.example .env              # edit with your config
+python scripts/init_db.py
+python app.py                    # runs on http://localhost:8000
 ```
 
-### 2. Mobile App
+### Mobile App
 
 ```bash
 cd mobile
@@ -59,58 +79,20 @@ npm install
 npx expo start
 ```
 
-Scan the QR code with the Expo Go app on your phone, or press `i` for iOS simulator / `a` for Android emulator.
+Scan the QR code with Expo Go, or press `i` / `a` for simulators.
 
-### 3. Environment Configuration
+## Tech Stack
 
-```bash
-# backend/.env
-FLASK_ENV=development
-DATABASE_URL=sqlite:///quran_app.db
+**Mobile:** React Native, Expo, React Navigation, Quran.com API
 
-# For Arabic ASR (optional, see backend/RIVA_ARABIC_SETUP.md)
-RIVA_API_URL=localhost:50051
-RIVA_MODEL_NAME=ar-AR-Conformer-CTC-Large
-RIVA_LANGUAGE_CODE=ar-AR
-```
-
-## API Endpoints
-
-### Quran Data
-- `GET /api/quran/chapters` - List all chapters
-- `GET /api/quran/chapters/:id` - Get chapter with verses
-- `GET /api/quran/audio/:chapter?verse=:verse&reciter=:reciter` - Get audio URL
-- `GET /api/quran/reciters` - List available reciters
-
-### Recitation Analysis
-- `POST /api/recitation/start-streaming` - Start analysis session
-- `POST /api/recitation/analyze-chunk` - Analyze audio chunk
-- `POST /api/recitation/finish-streaming` - Complete analysis
-
-### Progress Tracking
-- `GET /api/progress/:userId` - Get user progress
-- `GET /api/sessions/:userId` - Get practice sessions
-
-## Technology Stack
-
-**Mobile:** React Native, Expo, React Navigation
-
-**Backend:** Python, Flask, SQLAlchemy, NVIDIA Riva ASR, Al-Quran Cloud API
+**Backend:** Python, Flask, SQLAlchemy, NVIDIA Riva / OpenAI Whisper, Al-Quran Cloud API
 
 **Infrastructure:** SQLite, Docker (Riva deployment)
 
-## Resources
+## Documentation
 
-- **Riva Setup:** `backend/RIVA_ARABIC_SETUP.md`
-- **API Integration:** `QURAN_API_INTEGRATION.md`
-- **ML Pipeline:** `IMPROVEMENTS_FROM_TARTEEL.md`
-
-## License
-
-This project is for educational and religious purposes. Please use respectfully.
-
-## Acknowledgments
-
-- Al-Quran Cloud for comprehensive Quran API
-- NVIDIA Riva for Arabic ASR technology
-- All the reciters for their beautiful recitations
+See the `docs/` directory for detailed guides:
+- [Setup Guide](docs/SETUP.md)
+- [Quran API Integration](docs/QURAN_API_INTEGRATION.md)
+- [Riva ASR Setup](backend/docs/RIVA_SETUP.md)
+- [ML Pipeline Notes](docs/IMPROVEMENTS_FROM_TARTEEL.md)

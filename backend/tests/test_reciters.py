@@ -4,7 +4,7 @@ Test script to verify reciter audio URLs are working
 """
 
 import requests
-from quran_api import QuranAPIService
+from api.quran_api import QuranAPIService
 
 def test_reciter_audio():
     """Test that all reciters can serve audio"""

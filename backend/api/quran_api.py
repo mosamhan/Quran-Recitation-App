@@ -4,6 +4,7 @@ Provides access to all chapters, verses, and audio recitations
 """
 import requests
 import re
+import unicodedata
 from typing import List, Dict, Any, Optional
 
 # Al-Quran Cloud API base URL
@@ -32,6 +33,50 @@ RECITERS = {
     'yasser_ad_dussary': 19
 }
 
+# Chapter difficulty levels (1-5) and XP rewards
+# Based on verse count, verse length complexity, and traditional learning order
+# Level 1: Short surahs commonly memorized first (Juz Amma basics)
+# Level 2: Medium-short surahs (rest of Juz Amma, early Juz Tabarak)
+# Level 3: Medium surahs with moderate tajweed complexity
+# Level 4: Longer surahs with complex tajweed patterns
+# Level 5: Longest and most complex surahs
+CHAPTER_LEVELS = {
+    # Juz Amma short surahs – Level 1 (beginner)
+    112: 1, 113: 1, 114: 1, 1: 1, 108: 1, 110: 1, 111: 1, 109: 1,
+    107: 1, 106: 1, 105: 1, 104: 1, 103: 1, 102: 1, 101: 1, 97: 1,
+    # Juz Amma medium surahs – Level 2
+    100: 2, 99: 2, 98: 2, 96: 2, 95: 2, 94: 2, 93: 2, 92: 2,
+    91: 2, 90: 2, 89: 2, 88: 2, 87: 2, 86: 2, 85: 2, 84: 2,
+    83: 2, 82: 2, 81: 2, 80: 2, 79: 2, 78: 2,
+    # Medium surahs – Level 3
+    77: 3, 76: 3, 75: 3, 74: 3, 73: 3, 72: 3, 71: 3, 70: 3,
+    69: 3, 68: 3, 67: 3, 66: 3, 65: 3, 64: 3, 63: 3, 62: 3,
+    61: 3, 60: 3, 59: 3, 58: 3, 57: 3, 56: 3, 55: 3, 54: 3,
+    53: 3, 52: 3, 51: 3, 50: 3, 49: 3, 48: 3, 47: 3, 46: 3,
+    44: 3, 36: 3,
+    # Longer surahs – Level 4
+    45: 4, 43: 4, 42: 4, 41: 4, 40: 4, 39: 4, 38: 4, 37: 4,
+    35: 4, 34: 4, 33: 4, 32: 4, 31: 4, 30: 4, 29: 4, 28: 4,
+    27: 4, 26: 4, 25: 4, 24: 4, 23: 4, 22: 4, 21: 4, 20: 4,
+    19: 4, 18: 4, 17: 4, 16: 4, 15: 4, 14: 4, 13: 4, 12: 4,
+    11: 4, 10: 4,
+    # Longest / most complex surahs – Level 5
+    2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 5, 9: 5,
+}
+
+# XP per verse based on chapter level
+XP_PER_VERSE = {1: 5, 2: 8, 3: 12, 4: 18, 5: 25}
+
+def get_chapter_level(chapter_number):
+    """Get difficulty level (1-5) for a chapter"""
+    return CHAPTER_LEVELS.get(chapter_number, 3)
+
+def get_chapter_xp_per_verse(chapter_number):
+    """Get XP reward per verse for a chapter"""
+    level = get_chapter_level(chapter_number)
+    return XP_PER_VERSE.get(level, 10)
+
+
 class QuranAPIService:
     """Service for fetching Quran data from Al-Quran Cloud API"""
     
@@ -46,8 +91,9 @@ class QuranAPIService:
             if data.get('status') == 'OK' and 'data' in data:
                 chapters = []
                 for chapter in data['data']:
+                    ch_num = chapter.get('number')
                     chapters.append({
-                        'number': chapter.get('number'),
+                        'number': ch_num,
                         'name': chapter.get('name'),
                         'name_arabic': chapter.get('name'),
                         'name_simple': chapter.get('englishName'),
@@ -55,7 +101,9 @@ class QuranAPIService:
                         'english_name_translation': chapter.get('englishNameTranslation'),
                         'number_of_verses': chapter.get('numberOfAyahs'),
                         'revelation_type': chapter.get('revelationType'),
-                        'revelation_order': chapter.get('revelationOrder')
+                        'revelation_order': chapter.get('revelationOrder'),
+                        'difficulty_level': get_chapter_level(ch_num),
+                        'xp_per_verse': get_chapter_xp_per_verse(ch_num),
                     })
                 return chapters
             return []
@@ -101,45 +149,35 @@ class QuranAPIService:
                 arabic_text = ayah.get('text', '')
                 verse_in_surah = ayah.get('numberInSurah')
                 
-                # Remove bismillah from all verses except verse 1 of Al-Fatiha (chapter 1)
-                # Bismillah should only appear in Al-Fatiha verse 1
-                if not (chapter_number == 1 and verse_in_surah == 1):
-                    # Check if text starts with bismillah (various Unicode forms)
-                    # Look for بِس or بِسۡ at the start
+                # Remove bismillah from verse 1 of every surah except Al-Fatiha (ch 1)
+                # and At-Tawbah (ch 9, which has no bismillah).
+                # The API prepends bismillah to verse 1 text.
+                if verse_in_surah == 1 and chapter_number != 1 and chapter_number != 9:
                     text_stripped = arabic_text.strip()
-                    
-                    # Check if it starts with bismillah indicators
-                    if text_stripped.startswith('بِس') or text_stripped.startswith('بِسۡ'):
-                        # Find where bismillah likely ends
-                        # Bismillah typically ends before the actual verse content
-                        # Look for common verse-starting patterns or remove first ~45-50 characters
-                        
-                        # Try to find the actual verse content by looking for:
-                        # 1. Common verse starters after bismillah
-                        # 2. Or remove first portion (bismillah is typically 40-50 chars)
-                        
-                        # For most chapters, verse 1 content starts after bismillah
-                        # Try removing first 50 characters (typical bismillah length)
-                        if len(text_stripped) > 50:
-                            # Check if what remains looks like actual verse content
-                            remaining = text_stripped[50:].strip()
-                            if len(remaining) > 5:  # If there's substantial content left
-                                arabic_text = remaining
-                            else:
-                                # Try 60 chars
-                                remaining = text_stripped[60:].strip()
-                                if len(remaining) > 5:
-                                    arabic_text = remaining
-                                else:
-                                    # Last resort: remove first 45 chars
-                                    arabic_text = text_stripped[45:].strip()
-                        else:
-                            # Text is short, might be just bismillah - try removing first 40 chars
-                            if len(text_stripped) > 40:
-                                arabic_text = text_stripped[40:].strip()
-                    
-                    # Remove any leading space or punctuation that might remain
-                    arabic_text = arabic_text.lstrip(' \u060C\u061B\u061F\u0640\u200C\u200D\u200E\u200F\u00A0')
+                    if text_stripped.startswith('\u0628\u0650') or text_stripped.startswith('\u0628\u0650\u0633'):
+                        # Strip diacritics and format chars to match base letters
+                        base = ''.join(c for c in text_stripped if unicodedata.category(c) not in ('Mn', 'Cf'))
+                        # Normalize alef wasla (ٱ U+0671) to regular alef (ا U+0627) for matching
+                        base_norm = base.replace('\u0671', '\u0627')
+                        # Find end of bismillah by matching الرحيم / الرحیم
+                        for marker in ['الرحیم', 'الرحيم']:
+                            idx = base_norm.find(marker)
+                            if idx != -1:
+                                base_pos = idx + len(marker)
+                                # Map base position back to original text position
+                                base_count = 0
+                                orig_pos = 0
+                                for orig_pos, c in enumerate(text_stripped):
+                                    if unicodedata.category(c) not in ('Mn', 'Cf'):
+                                        base_count += 1
+                                    if base_count >= base_pos:
+                                        orig_pos += 1
+                                        break
+                                # Skip any trailing diacritics after the marker
+                                while orig_pos < len(text_stripped) and unicodedata.category(text_stripped[orig_pos]) in ('Mn', 'Cf'):
+                                    orig_pos += 1
+                                arabic_text = text_stripped[orig_pos:].strip()
+                                break
                 
                 # Find corresponding translation
                 translation_text = ''
@@ -174,6 +212,8 @@ class QuranAPIService:
                 'english_name_translation': chapter_data.get('englishNameTranslation'),
                 'number_of_verses': chapter_data.get('numberOfAyahs'),
                 'revelation_type': chapter_data.get('revelationType'),
+                'difficulty_level': get_chapter_level(chapter_number),
+                'xp_per_verse': get_chapter_xp_per_verse(chapter_number),
                 'verses': verses
             }
         except Exception as e:
@@ -235,56 +275,84 @@ class QuranAPIService:
         # Map reciter names to Al-Quran Cloud CDN format (ar.reciter_name)
         # Only includes reciters with confirmed working CDN audio
         # Tested 2026-01-25: these 9 reciters have working verse-by-verse audio
-        reciter_map = {
+        # Al-Quran Cloud CDN reciters (verse-by-verse via absolute ayah number)
+        alquran_cloud_map = {
             'alafasy': 'ar.alafasy',
             'abu_bakr_ash_shaatree': 'ar.shaatree',
             'ahmed_ibn_ali_al_ajamy': 'ar.ahmedajamy',
+            'abdurrahmaan_sudais': 'ar.abdurrahmaansudais',
+            'abdul_samad': 'ar.abdulsamad',
+            'abdullah_basfar': 'ar.abdullahbasfar',
+            'hani_rifai': 'ar.hanirifai',
             'hudhaify': 'ar.hudhaify',
             'husary': 'ar.husary',
             'husary_mujawwad': 'ar.husarymujawwad',
+            'ibrahim_akhdar': 'ar.ibrahimakhbar',
             'maher_al_muaiqly': 'ar.mahermuaiqly',
             'muhammad_ayyoub': 'ar.muhammadayyoub',
             'muhammad_jibreel': 'ar.muhammadjibreel',
+            'saood_shuraym': 'ar.saoodshuraym',
+            'ayman_sowaid': 'ar.aymanswoaid',
         }
-        
-        # Default to alafasy if not found
-        cdn_reciter = reciter_map.get(reciter, 'ar.alafasy')
-        bitrate = 128  # Standard quality
-        
+
+        # EveryAyah CDN reciters (verse-by-verse via SSSAAA format)
+        everyayah_map = {
+            'yasser_ad_dussary': 'Yasser_Ad-Dussary_128kbps',
+            'abdul_basit_murattal': 'Abdul_Basit_Murattal_192kbps',
+            'minshawi_murattal': 'Minshawy_Murattal_128kbps',
+            'nasser_alqatami': 'Nasser_Alqatami_128kbps',
+        }
+
         if verse_number:
-            # Get the absolute ayah number from the API
-            # The audio CDN requires the absolute verse number across the entire Quran
             try:
                 verse_data = QuranAPIService.get_verse(chapter_number, verse_number)
-                if verse_data and verse_data.get('number'):
-                    absolute_ayah_number = verse_data['number']
-                    return f"https://cdn.islamic.network/quran/audio/{bitrate}/{cdn_reciter}/{absolute_ayah_number}.mp3"
+                if not verse_data or not verse_data.get('number'):
+                    return f"https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/{chapter_number}.mp3"
+
+                absolute_ayah_number = verse_data['number']
+
+                # Check EveryAyah CDN first (for reciters not on Al-Quran Cloud)
+                if reciter in everyayah_map:
+                    folder = everyayah_map[reciter]
+                    sss = str(chapter_number).zfill(3)
+                    aaa = str(verse_number).zfill(3)
+                    return f"https://everyayah.com/data/{folder}/{sss}{aaa}.mp3"
+
+                # Al-Quran Cloud CDN
+                cdn_reciter = alquran_cloud_map.get(reciter, 'ar.alafasy')
+                return f"https://cdn.islamic.network/quran/audio/128/{cdn_reciter}/{absolute_ayah_number}.mp3"
             except Exception as e:
                 print(f"Error getting verse data for audio URL: {e}")
-            
-            # Fallback: Use chapter audio (plays entire chapter)
-            return f"https://cdn.islamic.network/quran/audio-surah/{bitrate}/{cdn_reciter}/{chapter_number}.mp3"
+                return f"https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/{chapter_number}.mp3"
         else:
-            # For entire chapter
-            return f"https://cdn.islamic.network/quran/audio-surah/{bitrate}/{cdn_reciter}/{chapter_number}.mp3"
+            cdn_reciter = alquran_cloud_map.get(reciter, 'ar.alafasy')
+            return f"https://cdn.islamic.network/quran/audio-surah/128/{cdn_reciter}/{chapter_number}.mp3"
     
     @staticmethod
     def get_available_reciters() -> List[Dict[str, str]]:
         """Get list of available reciters with working CDN audio"""
-        # Only reciters with confirmed working audio on cdn.islamic.network
-        # Tested and verified 2026-01-25
         reciter_names = {
             'alafasy': 'Mishary Rashid Alafasy',
             'abu_bakr_ash_shaatree': 'Abu Bakr Ash-Shaatree',
             'ahmed_ibn_ali_al_ajamy': 'Ahmed ibn Ali al-Ajamy',
+            'abdul_basit_murattal': 'Abdul Basit (Murattal)',
+            'abdul_samad': 'Abdul Samad',
+            'abdurrahmaan_sudais': 'Abdur-Rahman As-Sudais',
+            'abdullah_basfar': 'Abdullah Basfar',
+            'hani_rifai': 'Hani Ar-Rifai',
             'hudhaify': 'Ali Al-Hudhaify',
             'husary': 'Mahmoud Khalil Al-Husary',
             'husary_mujawwad': 'Mahmoud Khalil Al-Husary (Mujawwad)',
+            'ibrahim_akhdar': 'Ibrahim Akhdar',
             'maher_al_muaiqly': 'Maher Al Muaiqly',
+            'minshawi_murattal': 'Mohamed Siddiq Al-Minshawi (Murattal)',
             'muhammad_ayyoub': 'Muhammad Ayyoub',
             'muhammad_jibreel': 'Muhammad Jibreel',
+            'nasser_alqatami': 'Nasser Al-Qatami',
+            'saood_shuraym': "Sa'ud Ash-Shuraym",
+            'yasser_ad_dussary': 'Yasser Ad-Dossari',
         }
-        
+
         return [
             {'id': reciter_id, 'name': name}
             for reciter_id, name in sorted(reciter_names.items(), key=lambda x: x[1])

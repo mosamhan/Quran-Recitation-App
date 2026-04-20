@@ -8,10 +8,11 @@ from pathlib import Path
 def migrate_database():
     """Add missing columns to existing database"""
     # Try to find database file in common locations
+    backend_dir = Path(__file__).parent.parent
     possible_paths = [
-        Path(__file__).parent / 'instance' / 'quran_app.db',  # Flask default instance folder
-        Path(__file__).parent / 'quran_app.db',
-        Path(__file__).parent.parent / 'quran_app.db',
+        backend_dir / 'instance' / 'quran_app.db',  # Flask default instance folder
+        backend_dir / 'quran_app.db',
+        Path.cwd() / 'instance' / 'quran_app.db',
         Path.cwd() / 'quran_app.db',
     ]
     

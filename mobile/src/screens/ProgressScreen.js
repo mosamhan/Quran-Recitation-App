@@ -5,13 +5,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import TopNav from '../components/TopNav';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 
 export default function ProgressScreen({ navigation }) {
   const { user, isAuthenticated } = useUser();
   const { theme } = useTheme();
+  const { gamificationEnabled } = useSettings();
   const [stats, setStats] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +54,8 @@ export default function ProgressScreen({ navigation }) {
 
   if (!isAuthenticated) {
     return (
-      <SafeAreaView style={s.container}>
+      <SafeAreaView style={s.container} edges={['top']}>
+        <TopNav />
         <View style={s.authPromptContainer}>
           <Ionicons name="stats-chart-outline" size={64} color={theme.colors.textMuted} />
           <Text style={s.authTitle}>Track Your Progress</Text>
@@ -69,42 +73,48 @@ export default function ProgressScreen({ navigation }) {
     );
   }
 
-  const xp = stats?.xp || 0;
-  const level = stats?.level || 1;
-  const xpForNext = 500;
-  const xpProgress = (xp % xpForNext) / xpForNext;
-  const streak = stats?.streak || 0;
+  const streakData = stats?.streak || {};
+  const xp = streakData.total_xp || 0;
+  const level = streakData.level || 1;
+  const xpForNext = streakData.xp_for_next_level || 500;
+  const xpInLevel = streakData.xp_in_current_level || 0;
+  const xpProgress = xpForNext > 0 ? xpInLevel / xpForNext : 0;
+  const streak = streakData.current_streak || 0;
   const badges = stats?.badges || [];
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={s.container} edges={['top']}>
+      <TopNav />
       <ScrollView contentContainerStyle={s.scroll}>
-        <Text style={s.title}>Your Progress</Text>
 
         {/* Level & XP */}
-        <View style={s.card}>
-          <Text style={s.cardTitle}>Level {level}</Text>
-          <View style={s.xpBarBg}>
-            <View style={[s.xpBarFill, { width: `${xpProgress * 100}%` }]} />
+        {gamificationEnabled && (
+          <View style={s.card}>
+            <Text style={s.cardTitle}>Level {level}</Text>
+            <View style={s.xpBarBg}>
+              <View style={[s.xpBarFill, { width: `${xpProgress * 100}%` }]} />
+            </View>
+            <Text style={s.xpText}>
+              {xpInLevel} / {xpForNext} XP to next level
+            </Text>
           </View>
-          <Text style={s.xpText}>
-            {xp % xpForNext} / {xpForNext} XP to next level
-          </Text>
-        </View>
+        )}
 
         {/* Streak */}
-        <View style={s.card}>
-          <View style={s.streakRow}>
-            <Ionicons name="flame-outline" size={36} color={theme.colors.accent || theme.colors.primary} style={{ marginRight: theme.spacing.md }} />
-            <View>
-              <Text style={s.streakCount}>{streak} day streak</Text>
-              <Text style={s.streakSub}>Keep practicing daily!</Text>
+        {gamificationEnabled && (
+          <View style={s.card}>
+            <View style={s.streakRow}>
+              <Ionicons name="flame-outline" size={36} color={theme.colors.accent || theme.colors.primary} style={{ marginRight: theme.spacing.md }} />
+              <View>
+                <Text style={s.streakCount}>{streak} day streak</Text>
+                <Text style={s.streakSub}>Keep practicing daily!</Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         {/* Badges */}
-        {badges.length > 0 && (
+        {gamificationEnabled && badges.length > 0 && (
           <View style={s.card}>
             <Text style={s.cardTitle}>Badges</Text>
             <View style={s.badgeGrid}>
@@ -160,12 +170,6 @@ const createStyles = (theme) =>
     container: { flex: 1, backgroundColor: theme.colors.bgPrimary },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scroll: { padding: theme.spacing.lg, paddingBottom: theme.spacing.xxl },
-    title: {
-      fontSize: theme.fonts.sizeTitle,
-      ...theme.fonts.extraBold,
-      color: theme.colors.textPrimary,
-      marginBottom: theme.spacing.lg,
-    },
     // Auth prompt for unauthenticated users
     authPromptContainer: {
       flex: 1,

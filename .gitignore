@@ -49,8 +49,6 @@ build/
 # Expo / React Native
 .expo/
 *.xcode.env
-ios/
-android/
 
 # Large ML model files
 *.nemo

@@ -5,7 +5,7 @@ import base64
 import difflib
 import re
 from typing import Dict, Any, Optional
-from riva_client import RivaClient
+from services.riva_client import RivaClient
 
 class StreamingAnalyzer:
     """Analyzes audio in real-time and detects pronunciation mistakes"""
