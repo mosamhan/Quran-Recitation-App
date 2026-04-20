@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, SafeAreaView, TextInput,
+  ActivityIndicator, TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
-import { colors, spacing, borderRadius, fonts } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export default function QuranScreen({ navigation }) {
+  const { theme } = useTheme();
   const [chapters, setChapters] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const s = createStyles(theme);
 
   useEffect(() => {
     loadChapters();
@@ -24,9 +28,9 @@ export default function QuranScreen({ navigation }) {
       setFiltered(
         chapters.filter(
           (c) =>
-            (c.name_simple || c.english_name || '').toLowerCase().includes(q) ||
+            c.name_simple?.toLowerCase().includes(q) ||
             c.name_arabic?.includes(q) ||
-            String(c.number || c.id).includes(q)
+            String(c.id).includes(q)
         )
       );
     }
@@ -38,7 +42,7 @@ export default function QuranScreen({ navigation }) {
       setChapters(res.data.chapters || res.data);
       setFiltered(res.data.chapters || res.data);
     } catch {
-      // Silent fail — list stays empty
+      // Silent fail
     } finally {
       setLoading(false);
     }
@@ -46,98 +50,99 @@ export default function QuranScreen({ navigation }) {
 
   const renderChapter = ({ item }) => (
     <TouchableOpacity
-      style={styles.chapterCard}
+      style={s.chapterCard}
       onPress={() => navigation.navigate('ChapterDetail', { chapter: item })}
     >
-      <View style={styles.chapterNum}>
-        <Text style={styles.chapterNumText}>{item.number || item.id}</Text>
+      <View style={s.chapterNum}>
+        <Text style={s.chapterNumText}>{item.id}</Text>
       </View>
-      <View style={styles.chapterInfo}>
-        <Text style={styles.chapterName}>{item.name_simple || item.english_name}</Text>
-        <Text style={styles.chapterMeta}>
-          {item.number_of_verses || item.verses_count} verses • {item.revelation_type || item.revelation_place}
+      <View style={s.chapterInfo}>
+        <Text style={s.chapterName}>{item.name_simple}</Text>
+        <Text style={s.chapterMeta}>
+          {item.verses_count} verses • {item.revelation_place}
         </Text>
       </View>
-      <Text style={styles.chapterArabic}>{item.name_arabic}</Text>
+      <Text style={s.chapterArabic}>{item.name_arabic}</Text>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={s.centered}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Quran</Text>
+    <SafeAreaView style={s.container}>
+      <View style={s.header}>
+        <Text style={s.title}>Quran</Text>
         <TextInput
-          style={styles.searchInput}
+          style={s.searchInput}
           placeholder="Search chapters..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={theme.colors.textMuted}
           value={search}
           onChangeText={setSearch}
         />
       </View>
       <FlatList
         data={filtered}
-        keyExtractor={(item, index) => String(item.number || item.id || index)}
+        keyExtractor={(item) => String(item.id)}
         renderItem={renderChapter}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={s.list}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgLight },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { padding: spacing.lg, paddingBottom: spacing.md },
-  title: {
-    fontSize: 28,
-    ...fonts.extraBold,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  searchInput: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.md,
-    padding: 14,
-    fontSize: 15,
-    color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  chapterCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  chapterNum: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.bgLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  chapterNumText: { fontSize: 14, ...fonts.bold, color: colors.primary },
-  chapterInfo: { flex: 1 },
-  chapterName: { fontSize: 16, ...fonts.semiBold, color: colors.textPrimary },
-  chapterMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  chapterArabic: { fontSize: 18, color: colors.textSecondary },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.bgPrimary },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    header: { padding: theme.spacing.lg, paddingBottom: theme.spacing.md },
+    title: {
+      fontSize: theme.fonts.sizeTitle,
+      ...theme.fonts.extraBold,
+      color: theme.colors.textPrimary,
+      marginBottom: theme.spacing.md,
+    },
+    searchInput: {
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.md,
+      padding: 14,
+      fontSize: theme.fonts.sizeBase,
+      color: theme.colors.textPrimary,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    list: { paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.xl },
+    chapterCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.md,
+      padding: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      shadowColor: theme.colors.cardShadow,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    chapterNum: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.colors.bgPrimary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: theme.spacing.md,
+    },
+    chapterNumText: { fontSize: 14, ...theme.fonts.bold, color: theme.colors.primary },
+    chapterInfo: { flex: 1 },
+    chapterName: { fontSize: 16, ...theme.fonts.semiBold, color: theme.colors.textPrimary },
+    chapterMeta: { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
+    chapterArabic: { fontSize: 18, color: theme.colors.textSecondary },
+  });

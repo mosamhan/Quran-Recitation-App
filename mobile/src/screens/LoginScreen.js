@@ -4,13 +4,16 @@ import {
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { useUser } from '../context/UserContext';
-import { colors, spacing, borderRadius, fonts } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useUser();
+  const { theme } = useTheme();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const s = createStyles(theme);
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -22,8 +25,9 @@ export default function LoginScreen({ navigation }) {
       const data = await login(identifier, password);
       if (!data.user.onboarding_completed) {
         navigation.replace('Onboarding');
+      } else {
+        navigation.goBack();
       }
-      // Navigation handled by auth state change
     } catch (err) {
       Alert.alert('Login Failed', err.response?.data?.error || 'Please try again');
     } finally {
@@ -33,46 +37,53 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={s.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.card}>
-        <Text style={styles.logo}>IQRA</Text>
-        <Text style={styles.subtitle}>Learn to recite the Quran</Text>
+      {/* Dismiss handle */}
+      <View style={s.handleBar} />
+
+      <View style={s.card}>
+        <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()}>
+          <Text style={s.closeBtnText}>✕</Text>
+        </TouchableOpacity>
+
+        <Text style={s.logo}>IQRA</Text>
+        <Text style={s.subtitle}>Sign in to sync your progress</Text>
 
         <TextInput
-          style={styles.input}
+          style={s.input}
           placeholder="Username or Email"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={theme.colors.textMuted}
           value={identifier}
           onChangeText={setIdentifier}
           autoCapitalize="none"
           autoCorrect={false}
         />
         <TextInput
-          style={styles.input}
+          style={s.input}
           placeholder="Password"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={theme.colors.textMuted}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={[s.button, loading && s.buttonDisabled]}
           onPress={handleLogin}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Log In</Text>
+            <Text style={s.buttonText}>Log In</Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.linkText}>
-            Don't have an account? <Text style={styles.linkBold}>Sign Up</Text>
+        <TouchableOpacity onPress={() => navigation.replace('Register')}>
+          <Text style={s.linkText}>
+            Don't have an account? <Text style={s.linkBold}>Sign Up</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -80,68 +91,84 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgLight,
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
-  },
-  logo: {
-    fontSize: 36,
-    ...fonts.extraBold,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    letterSpacing: 6,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-  },
-  input: {
-    backgroundColor: colors.bgLight,
-    borderRadius: borderRadius.md,
-    padding: 16,
-    fontSize: 16,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: {
-    color: '#fff',
-    fontSize: 17,
-    ...fonts.bold,
-  },
-  linkText: {
-    textAlign: 'center',
-    color: colors.textSecondary,
-    fontSize: 14,
-  },
-  linkBold: {
-    color: colors.primary,
-    ...fonts.bold,
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.bgPrimary,
+      justifyContent: 'center',
+      padding: theme.spacing.lg,
+    },
+    handleBar: {
+      width: 40,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: theme.colors.border,
+      alignSelf: 'center',
+      position: 'absolute',
+      top: 12,
+    },
+    card: {
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.xl,
+      padding: theme.spacing.xl,
+      shadowColor: theme.colors.cardShadow,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 1,
+      shadowRadius: 20,
+      elevation: 5,
+    },
+    closeBtn: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      zIndex: 1,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: theme.colors.bgPrimary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    closeBtnText: { fontSize: 16, color: theme.colors.textMuted },
+    logo: {
+      fontSize: 36,
+      ...theme.fonts.extraBold,
+      color: theme.colors.primary,
+      textAlign: 'center',
+      letterSpacing: 6,
+      marginBottom: theme.spacing.sm,
+    },
+    subtitle: {
+      fontSize: theme.fonts.sizeSmall,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: theme.spacing.xl,
+    },
+    input: {
+      backgroundColor: theme.colors.bgPrimary,
+      borderRadius: theme.borderRadius.md,
+      padding: 16,
+      fontSize: theme.fonts.sizeBase,
+      color: theme.colors.textPrimary,
+      marginBottom: theme.spacing.md,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    button: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.borderRadius.md,
+      padding: 16,
+      alignItems: 'center',
+      marginTop: theme.spacing.sm,
+      marginBottom: theme.spacing.lg,
+    },
+    buttonDisabled: { opacity: 0.6 },
+    buttonText: { color: '#fff', fontSize: 17, ...theme.fonts.bold },
+    linkText: {
+      textAlign: 'center',
+      color: theme.colors.textSecondary,
+      fontSize: 14,
+    },
+    linkBold: { color: theme.colors.primary, ...theme.fonts.bold },
+  });

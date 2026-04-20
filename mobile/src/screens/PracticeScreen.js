@@ -1,20 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  SafeAreaView, Alert, ActivityIndicator, ScrollView,
+  Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import api from '../services/api';
+import { useUser } from '../context/UserContext';
+import { useTheme } from '../context/ThemeContext';
+
 let Audio;
 try {
   Audio = require('expo-av').Audio;
 } catch {
   Audio = null;
 }
-import api from '../services/api';
-import { useUser } from '../context/UserContext';
-import { colors, spacing, borderRadius, fonts } from '../utils/theme';
 
 export default function PracticeScreen() {
   const { user } = useUser();
+  const { theme } = useTheme();
   const [recording, setRecording] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -24,6 +27,8 @@ export default function PracticeScreen() {
   const [results, setResults] = useState(null);
   const [wordStatuses, setWordStatuses] = useState([]);
   const streamingSessionRef = useRef(null);
+
+  const s = createStyles(theme);
 
   useEffect(() => {
     loadVerse();
@@ -59,7 +64,6 @@ export default function PracticeScreen() {
         playsInSilentModeIOS: true,
       });
 
-      // Start streaming session on backend
       const sessionRes = await api.startStreamingAnalysis({
         user_id: user?.id,
         chapter_number: selectedChapter,
@@ -74,7 +78,7 @@ export default function PracticeScreen() {
       setRecording(rec);
       setIsRecording(true);
       setResults(null);
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Could not start recording. Please try again.');
     }
   };
@@ -89,7 +93,6 @@ export default function PracticeScreen() {
       const uri = recording.getURI();
       setRecording(null);
 
-      // Finish streaming analysis
       if (streamingSessionRef.current) {
         const res = await api.finishStreamingAnalysis({
           session_key: streamingSessionRef.current,
@@ -107,69 +110,71 @@ export default function PracticeScreen() {
   };
 
   const getAccuracyColor = (accuracy) => {
-    if (accuracy >= 80) return colors.success;
-    if (accuracy >= 60) return colors.warning;
-    return colors.danger;
+    if (accuracy >= 80) return theme.colors.success;
+    if (accuracy >= 60) return theme.colors.warning;
+    return theme.colors.danger;
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <SafeAreaView style={s.container}>
+      <ScrollView contentContainerStyle={s.scroll}>
+        <Text style={s.screenTitle}>Practice</Text>
+
         {/* Verse selector */}
-        <View style={styles.selectorRow}>
-          <View style={styles.selector}>
-            <Text style={styles.selectorLabel}>Chapter</Text>
-            <View style={styles.stepperRow}>
+        <View style={s.selectorRow}>
+          <View style={s.selector}>
+            <Text style={s.selectorLabel}>Chapter</Text>
+            <View style={s.stepperRow}>
               <TouchableOpacity
-                style={styles.stepperBtn}
+                style={s.stepperBtn}
                 onPress={() => setSelectedChapter(Math.max(1, selectedChapter - 1))}
               >
-                <Text style={styles.stepperText}>-</Text>
+                <Text style={s.stepperText}>-</Text>
               </TouchableOpacity>
-              <Text style={styles.stepperValue}>{selectedChapter}</Text>
+              <Text style={s.stepperValue}>{selectedChapter}</Text>
               <TouchableOpacity
-                style={styles.stepperBtn}
+                style={s.stepperBtn}
                 onPress={() => setSelectedChapter(Math.min(114, selectedChapter + 1))}
               >
-                <Text style={styles.stepperText}>+</Text>
+                <Text style={s.stepperText}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
-          <View style={styles.selector}>
-            <Text style={styles.selectorLabel}>Verse</Text>
-            <View style={styles.stepperRow}>
+          <View style={s.selector}>
+            <Text style={s.selectorLabel}>Verse</Text>
+            <View style={s.stepperRow}>
               <TouchableOpacity
-                style={styles.stepperBtn}
+                style={s.stepperBtn}
                 onPress={() => setSelectedVerse(Math.max(1, selectedVerse - 1))}
               >
-                <Text style={styles.stepperText}>-</Text>
+                <Text style={s.stepperText}>-</Text>
               </TouchableOpacity>
-              <Text style={styles.stepperValue}>{selectedVerse}</Text>
+              <Text style={s.stepperValue}>{selectedVerse}</Text>
               <TouchableOpacity
-                style={styles.stepperBtn}
+                style={s.stepperBtn}
                 onPress={() => setSelectedVerse(selectedVerse + 1)}
               >
-                <Text style={styles.stepperText}>+</Text>
+                <Text style={s.stepperText}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
         {/* Arabic verse display */}
-        <View style={styles.verseCard}>
-          <Text style={styles.verseText}>{verseText || 'Loading verse...'}</Text>
+        <View style={s.verseCard}>
+          <Text style={s.verseText}>{verseText || 'Loading verse...'}</Text>
           {wordStatuses.length > 0 && (
-            <View style={styles.wordStatusRow}>
+            <View style={s.wordStatusRow}>
               {wordStatuses.map((ws, i) => (
                 <View
                   key={i}
                   style={[
-                    styles.wordDot,
+                    s.wordDot,
                     {
                       backgroundColor:
-                        ws.status === 'correct' ? colors.success
-                          : ws.status === 'incorrect' ? colors.danger
-                          : colors.border,
+                        ws.status === 'correct' ? theme.colors.success
+                          : ws.status === 'incorrect' ? theme.colors.danger
+                          : theme.colors.border,
                     },
                   ]}
                 />
@@ -180,10 +185,7 @@ export default function PracticeScreen() {
 
         {/* Record button */}
         <TouchableOpacity
-          style={[
-            styles.recordButton,
-            isRecording && styles.recordButtonActive,
-          ]}
+          style={[s.recordButton, isRecording && s.recordButtonActive]}
           onPress={isRecording ? stopRecording : startRecording}
           disabled={isAnalyzing}
         >
@@ -191,8 +193,8 @@ export default function PracticeScreen() {
             <ActivityIndicator color="#fff" size="large" />
           ) : (
             <>
-              <Text style={styles.recordIcon}>{isRecording ? '⏹' : '🎙'}</Text>
-              <Text style={styles.recordLabel}>
+              <Text style={s.recordIcon}>{isRecording ? '⏹' : '🎙'}</Text>
+              <Text style={s.recordLabel}>
                 {isRecording ? 'Stop Recording' : 'Start Recording'}
               </Text>
             </>
@@ -201,13 +203,13 @@ export default function PracticeScreen() {
 
         {/* Results */}
         {results && (
-          <View style={styles.resultsCard}>
-            <Text style={styles.resultsTitle}>Results</Text>
-            <View style={styles.accuracyRow}>
-              <Text style={styles.accuracyLabel}>Accuracy</Text>
+          <View style={s.resultsCard}>
+            <Text style={s.resultsTitle}>Results</Text>
+            <View style={s.accuracyRow}>
+              <Text style={s.accuracyLabel}>Accuracy</Text>
               <Text
                 style={[
-                  styles.accuracyValue,
+                  s.accuracyValue,
                   { color: getAccuracyColor(results.accuracy || 0) },
                 ]}
               >
@@ -215,12 +217,12 @@ export default function PracticeScreen() {
               </Text>
             </View>
             {results.tajweed_feedback?.length > 0 && (
-              <View style={styles.feedbackSection}>
-                <Text style={styles.feedbackTitle}>Tajweed Feedback</Text>
+              <View style={s.feedbackSection}>
+                <Text style={s.feedbackTitle}>Tajweed Feedback</Text>
                 {results.tajweed_feedback.map((fb, i) => (
-                  <View key={i} style={styles.feedbackItem}>
-                    <Text style={styles.feedbackRule}>{fb.rule}</Text>
-                    <Text style={styles.feedbackText}>{fb.message}</Text>
+                  <View key={i} style={s.feedbackItem}>
+                    <Text style={s.feedbackRule}>{fb.rule}</Text>
+                    <Text style={s.feedbackText}>{fb.message}</Text>
                   </View>
                 ))}
               </View>
@@ -232,113 +234,126 @@ export default function PracticeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgLight },
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  selectorRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  selector: {
-    flex: 1,
-    marginHorizontal: spacing.xs,
-  },
-  selectorLabel: {
-    fontSize: 13,
-    color: colors.textMuted,
-    ...fonts.semiBold,
-    marginBottom: spacing.xs,
-    textAlign: 'center',
-  },
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-  },
-  stepperBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.bgLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepperText: { fontSize: 18, ...fonts.bold, color: colors.primary },
-  stepperValue: {
-    fontSize: 18,
-    ...fonts.bold,
-    color: colors.textPrimary,
-    marginHorizontal: spacing.lg,
-    minWidth: 30,
-    textAlign: 'center',
-  },
-  verseCard: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  verseText: {
-    fontSize: 26,
-    lineHeight: 48,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    writingDirection: 'rtl',
-  },
-  wordStatusRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginTop: spacing.md,
-    gap: 6,
-  },
-  wordDot: { width: 10, height: 10, borderRadius: 5 },
-  recordButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.round,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  recordButtonActive: { backgroundColor: colors.danger },
-  recordIcon: { fontSize: 32, marginBottom: spacing.xs },
-  recordLabel: { color: '#fff', fontSize: 16, ...fonts.bold },
-  resultsCard: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  resultsTitle: {
-    fontSize: 20,
-    ...fonts.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  accuracyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  accuracyLabel: { fontSize: 16, color: colors.textSecondary },
-  accuracyValue: { fontSize: 32, ...fonts.extraBold },
-  feedbackSection: { borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: spacing.md },
-  feedbackTitle: { fontSize: 16, ...fonts.semiBold, color: colors.textPrimary, marginBottom: spacing.sm },
-  feedbackItem: { marginBottom: spacing.sm },
-  feedbackRule: { fontSize: 14, ...fonts.bold, color: colors.primary },
-  feedbackText: { fontSize: 14, color: colors.textSecondary },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.bgPrimary },
+    scroll: { padding: theme.spacing.lg, paddingBottom: theme.spacing.xxl },
+    screenTitle: {
+      fontSize: theme.fonts.sizeTitle,
+      ...theme.fonts.extraBold,
+      color: theme.colors.textPrimary,
+      marginBottom: theme.spacing.lg,
+    },
+    selectorRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: theme.spacing.lg,
+    },
+    selector: { flex: 1, marginHorizontal: theme.spacing.xs },
+    selectorLabel: {
+      fontSize: theme.fonts.sizeSmall,
+      color: theme.colors.textMuted,
+      ...theme.fonts.semiBold,
+      marginBottom: theme.spacing.xs,
+      textAlign: 'center',
+    },
+    stepperRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.md,
+      padding: theme.spacing.sm,
+    },
+    stepperBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: theme.colors.bgPrimary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    stepperText: { fontSize: 18, ...theme.fonts.bold, color: theme.colors.primary },
+    stepperValue: {
+      fontSize: 18,
+      ...theme.fonts.bold,
+      color: theme.colors.textPrimary,
+      marginHorizontal: theme.spacing.lg,
+      minWidth: 30,
+      textAlign: 'center',
+    },
+    verseCard: {
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.lg,
+      padding: theme.spacing.xl,
+      marginBottom: theme.spacing.lg,
+      shadowColor: theme.colors.cardShadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    verseText: {
+      fontSize: theme.fonts.sizeArabic,
+      lineHeight: theme.fonts.sizeArabic * 1.8,
+      color: theme.colors.textPrimary,
+      textAlign: 'center',
+      writingDirection: 'rtl',
+    },
+    wordStatusRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+      marginTop: theme.spacing.md,
+      gap: 6,
+    },
+    wordDot: { width: 10, height: 10, borderRadius: 5 },
+    recordButton: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.borderRadius.round,
+      paddingVertical: theme.spacing.lg,
+      alignItems: 'center',
+      marginBottom: theme.spacing.lg,
+    },
+    recordButtonActive: { backgroundColor: theme.colors.danger },
+    recordIcon: { fontSize: 32, marginBottom: theme.spacing.xs },
+    recordLabel: { color: '#fff', fontSize: 16, ...theme.fonts.bold },
+    resultsCard: {
+      backgroundColor: theme.colors.bgCard,
+      borderRadius: theme.borderRadius.lg,
+      padding: theme.spacing.lg,
+      shadowColor: theme.colors.cardShadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    resultsTitle: {
+      fontSize: 20,
+      ...theme.fonts.bold,
+      color: theme.colors.textPrimary,
+      marginBottom: theme.spacing.md,
+    },
+    accuracyRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing.md,
+    },
+    accuracyLabel: { fontSize: 16, color: theme.colors.textSecondary },
+    accuracyValue: { fontSize: 32, ...theme.fonts.extraBold },
+    feedbackSection: {
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.borderLight,
+      paddingTop: theme.spacing.md,
+    },
+    feedbackTitle: {
+      fontSize: 16,
+      ...theme.fonts.semiBold,
+      color: theme.colors.textPrimary,
+      marginBottom: theme.spacing.sm,
+    },
+    feedbackItem: { marginBottom: theme.spacing.sm },
+    feedbackRule: { fontSize: 14, ...theme.fonts.bold, color: theme.colors.primary },
+    feedbackText: { fontSize: 14, color: theme.colors.textSecondary },
+  });
