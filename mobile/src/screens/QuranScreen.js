@@ -24,9 +24,9 @@ export default function QuranScreen({ navigation }) {
       setFiltered(
         chapters.filter(
           (c) =>
-            c.name_simple?.toLowerCase().includes(q) ||
+            (c.name_simple || c.english_name || '').toLowerCase().includes(q) ||
             c.name_arabic?.includes(q) ||
-            String(c.id).includes(q)
+            String(c.number || c.id).includes(q)
         )
       );
     }
@@ -50,12 +50,12 @@ export default function QuranScreen({ navigation }) {
       onPress={() => navigation.navigate('ChapterDetail', { chapter: item })}
     >
       <View style={styles.chapterNum}>
-        <Text style={styles.chapterNumText}>{item.id}</Text>
+        <Text style={styles.chapterNumText}>{item.number || item.id}</Text>
       </View>
       <View style={styles.chapterInfo}>
-        <Text style={styles.chapterName}>{item.name_simple}</Text>
+        <Text style={styles.chapterName}>{item.name_simple || item.english_name}</Text>
         <Text style={styles.chapterMeta}>
-          {item.verses_count} verses • {item.revelation_place}
+          {item.number_of_verses || item.verses_count} verses • {item.revelation_type || item.revelation_place}
         </Text>
       </View>
       <Text style={styles.chapterArabic}>{item.name_arabic}</Text>
@@ -84,7 +84,7 @@ export default function QuranScreen({ navigation }) {
       </View>
       <FlatList
         data={filtered}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={(item, index) => String(item.number || item.id || index)}
         renderItem={renderChapter}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
