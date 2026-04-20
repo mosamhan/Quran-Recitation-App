@@ -4,13 +4,14 @@ import {
   Alert, ScrollView, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
 
 const AGE_THEMES = [
-  { key: 'child', label: 'Child', ages: '5-12', emoji: '🌟', preview: '#FF6B9D' },
-  { key: 'teen', label: 'Teen', ages: '13-17', emoji: '🚀', preview: '#667eea' },
-  { key: 'adult', label: 'Adult', ages: '18+', emoji: '📚', preview: '#2c3e50' },
+  { key: 'child', label: 'Child', ages: '5-12', icon: 'sparkles-outline', preview: '#FF6B9D' },
+  { key: 'teen', label: 'Teen', ages: '13-17', icon: 'rocket-outline', preview: '#667eea' },
+  { key: 'adult', label: 'Adult', ages: '18+', icon: 'library-outline', preview: '#2c3e50' },
 ];
 
 const TRANSLATIONS = [
@@ -117,7 +118,7 @@ export default function SettingsScreen({ navigation }) {
                 onPress={() => setAgeGroup(t.key)}
               >
                 <View style={[s.themePreview, { backgroundColor: t.preview }]} />
-                <Text style={s.themeEmoji}>{t.emoji}</Text>
+                <Ionicons name={t.icon} size={26} color={ageGroup === t.key ? t.preview : theme.colors.textSecondary} />
                 <Text style={[
                   s.themeLabel,
                   ageGroup === t.key && { color: t.preview },

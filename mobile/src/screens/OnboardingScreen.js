@@ -4,13 +4,14 @@ import {
   Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
 
 const AGE_GROUPS = [
-  { key: 'child', label: 'Child', ages: 'Ages 5-12', emoji: '🌟' },
-  { key: 'teen', label: 'Teen', ages: 'Ages 13-17', emoji: '🚀' },
-  { key: 'adult', label: 'Adult', ages: 'Ages 18+', emoji: '📚' },
+  { key: 'child', label: 'Child', ages: 'Ages 5-12', icon: 'sparkles-outline' },
+  { key: 'teen', label: 'Teen', ages: 'Ages 13-17', icon: 'rocket-outline' },
+  { key: 'adult', label: 'Adult', ages: 'Ages 18+', icon: 'library-outline' },
 ];
 
 const EXPERIENCE_LEVELS = [
@@ -81,7 +82,7 @@ export default function OnboardingScreen({ navigation }) {
                 style={[s.card, ageGroup === ag.key && s.cardSelected]}
                 onPress={() => setAgeGroup(ag.key)}
               >
-                <Text style={s.cardEmoji}>{ag.emoji}</Text>
+                <Ionicons name={ag.icon} size={32} color={ageGroup === ag.key ? theme.colors.primary : theme.colors.textSecondary} style={{ marginBottom: theme.spacing.sm }} />
                 <Text style={[s.cardLabel, ageGroup === ag.key && s.cardLabelSelected]}>
                   {ag.label}
                 </Text>

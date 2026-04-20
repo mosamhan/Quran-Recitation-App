@@ -4,6 +4,7 @@ import {
   ActivityIndicator, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
@@ -52,7 +53,7 @@ export default function ProgressScreen({ navigation }) {
     return (
       <SafeAreaView style={s.container}>
         <View style={s.authPromptContainer}>
-          <Text style={s.authEmoji}>📊</Text>
+          <Ionicons name="stats-chart-outline" size={64} color={theme.colors.textMuted} />
           <Text style={s.authTitle}>Track Your Progress</Text>
           <Text style={s.authDesc}>
             Sign in to save your recitation sessions, earn XP, and track your Quran learning journey.
@@ -94,7 +95,7 @@ export default function ProgressScreen({ navigation }) {
         {/* Streak */}
         <View style={s.card}>
           <View style={s.streakRow}>
-            <Text style={s.streakEmoji}>🔥</Text>
+            <Ionicons name="flame-outline" size={36} color={theme.colors.accent || theme.colors.primary} style={{ marginRight: theme.spacing.md }} />
             <View>
               <Text style={s.streakCount}>{streak} day streak</Text>
               <Text style={s.streakSub}>Keep practicing daily!</Text>
@@ -109,7 +110,7 @@ export default function ProgressScreen({ navigation }) {
             <View style={s.badgeGrid}>
               {badges.map((badge, i) => (
                 <View key={i} style={s.badge}>
-                  <Text style={s.badgeIcon}>{badge.icon || '🏅'}</Text>
+                  <Ionicons name="ribbon-outline" size={28} color={theme.colors.primary} style={{ marginBottom: 4 }} />
                   <Text style={s.badgeName}>{badge.name}</Text>
                 </View>
               ))}

@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 
@@ -80,9 +81,11 @@ export default function ChapterDetailScreen({ route }) {
           <Text style={s.verseNumText}>{item.verse_number}</Text>
         </View>
         <TouchableOpacity style={s.playBtn} onPress={() => playAudio(item)}>
-          <Text style={s.playBtnText}>
-            {playingVerse === item.verse_number ? '⏹' : '▶'}
-          </Text>
+          <Ionicons
+            name={playingVerse === item.verse_number ? 'stop' : 'play'}
+            size={16}
+            color="#fff"
+          />
         </TouchableOpacity>
       </View>
       <Text style={s.arabicText}>{item.text_uthmani || item.text}</Text>
